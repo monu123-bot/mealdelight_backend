@@ -5,7 +5,7 @@ const cookie = require('cookie');
 const axios = require('axios');
 
 // Import models
-const User = require("../models/User");
+const User = require("../Models/User");
 const PaymentOrder = require("../Models/PaymentOrder");
 
 const createOrder = async (req, res) => {
