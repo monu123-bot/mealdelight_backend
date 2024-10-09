@@ -1,8 +1,5 @@
 
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const cookie = require('cookie');
-const axios = require('axios');
+
 const Plans = require('../Models/Plans');
 const User = require('../Models/User');
 const Coupon = require('../Models/Coupon');

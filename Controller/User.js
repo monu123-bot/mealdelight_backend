@@ -5,8 +5,7 @@ const mongoose = require('mongoose')
 // var cryptojs = require('crypto-js')
 // const { default: mongoose, MongooseError } = require('mongoose')
 // const sendEmail = require('../functions/SendEmail')
-const bcrypt = require('bcrypt')
-const cookie = require('cookie');
+const bcrypt = require('bcryptjs')
 const PaymentOrder = require('../Models/PaymentOrder');
 const PlansTransaction = require('../Models/PlansTransaction');
 
