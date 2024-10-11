@@ -23,7 +23,9 @@ const session = require('express-session');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-
+app.use(cors({
+  origin: `${process.env.CLIENT_URL}`  // Replace with your frontend URL
+}));
 
 // app.use(
 //     cors(
@@ -42,7 +44,7 @@ const PORT = process.env.PORT || 3002;
   app.use(bodyParser.urlencoded({ extended: true, parameterLimit: 100000, limit: "50mb" }));
   
   // Enable CORS for all routes
-  app.use(cors({ credentials: true }));
+  // app.use(cors({ credentials: true }));
   app.use(cookieParser());
 
 
