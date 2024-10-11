@@ -25,16 +25,17 @@ const PORT = process.env.PORT || 3002;
 
 
 
-app.use(
-    cors(
-      {
-      origin: `${process.env.CLIENT_URL}` || "http://localhost:3000" ,
-      // origin:"http://localhost:3000",
-      methods: ["GET", "POST"],
-      credentials: true,
-    }
-  )
-  );
+// app.use(
+//     cors(
+//       {
+//       origin: `${process.env.CLIENT_URL}` || "http://localhost:3000" ,
+//       // origin:"http://localhost:3000",
+//       methods: ["GET", "POST"],
+//       credentials: true,
+//     }
+//   )
+//   );
+
   // Middleware to parse JSON and URL-encoded bodies
   app.use(express.json());
   app.use(bodyParser.json({ limit: '50mb' }));
