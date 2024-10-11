@@ -36,7 +36,8 @@ const paymentOrderSchema = new mongoose.Schema({
     },
     order_status:{
        type:String,
-       enum:['SUCCESS','FAILED']
+       enum:['SUCCESS','FAILED'],
+       default:'FAILED'
     },
     order_expiry_time: {
         type: Date,
