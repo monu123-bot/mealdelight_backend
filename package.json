@@ -1,6 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
+  "proxy":"http://themealdelight.in",
   "description": "",
   "main": "index.js",
   "scripts": {

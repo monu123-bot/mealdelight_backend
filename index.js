@@ -23,9 +23,9 @@ const session = require('express-session');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-app.use(cors({
-  origin: `${process.env.CLIENT_URL}`  // Replace with your frontend URL
-}));
+// app.use(cors({
+//   origin: `${process.env.CLIENT_URL}`  // Replace with your frontend URL
+// }));
 
 // app.use(
 //     cors(
