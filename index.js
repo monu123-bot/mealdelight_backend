@@ -127,12 +127,12 @@ const UserRouter = require('./Routes/User');
 const PaymentRouter = require('./Routes/Payment');
 const PlansRouter = require('./Routes/Plans');
 const CouponsRouter = require('./Routes/Coupons')
-
+const PhoneRouter = require('./Routes/Phone')
 app.use("/user", UserRouter);
 app.use("/payment",PaymentRouter)
 app.use("/plans",PlansRouter)
 app.use("/coupons",CouponsRouter)
-
+app.use("/phone",PhoneRouter)
 app.listen(PORT, () => {
   console.log('Server is running on port:', PORT);
 });

@@ -73,11 +73,11 @@ const login = async (req, res) => {
 
 const createUser =async (req,res) =>{
     try {
-        const { firstName, lastName, email, phone, role, password, street, apartment, city, state, postalCode,address } = req.body;
+        const { firstName, lastName, email, phone, password, street, apartment, city, state, postalCode,address } = req.body;
     
         const existingUser = await User.findOne({ phone });
         if (existingUser) {
-          return res.status(400).json({ msg: 'User already exists with this email' });
+          return res.status(400).json({ msg: 'User already exists with this phone' });
         }
     
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -87,7 +87,6 @@ const createUser =async (req,res) =>{
           lastName,
           email,
           phone,
-          role,
           password: hashedPassword,
           street,
           apartment,
@@ -98,7 +97,7 @@ const createUser =async (req,res) =>{
         });
     
         await user.save();
-        res.status(201).json({ msg: 'User created successfully' });
+        res.status(200).json({ msg: 'User created successfully' });
       } catch (error) {
         console.error('Error creating user:', error);
         res.status(500).json({ msg: 'Server error' });
