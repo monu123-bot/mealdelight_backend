@@ -5,33 +5,64 @@ const axios = require('axios');
 // Import models
 const User = require("../Models/User");
 const PaymentOrder = require("../Models/PaymentOrder");
-
 const createOrder = async (req, res) => {
-  Cashfree.XClientId = `${process.env.CASHFREE_CLIENT_ID_TEST}`;
-  Cashfree.XClientSecret = `${process.env.CASHFREE_CLIENT_SECRET_TEST}`;
-  Cashfree.XEnvironment = `${process.env.CASHFREE_ENVIRONMENT}`;
+  const options = {
+    method: 'POST',
+    url: 'https://api.cashfree.com/pg/orders',
+    headers: {
+      accept: 'application/json',
+      'x-api-version': '2023-08-01',
+      'content-type': 'application/json',
+      'x-client-id': process.env.CASHFREE_CLIENT_ID,
+      'x-client-secret': process.env.CASHFREE_CLIENT_SECRET
+    },
+    data: {
+      customer_details: {
+        customer_id: req.body.customer_details.customer_id,
+        customer_phone: req.body.customer_details.customer_phone,
+        customer_name: req.body.customer_details.customer_name,
+        customer_email: req.body.customer_details.customer_email
+      },
+      order_id: req.body.order_id,
+      order_currency: req.body.order_currency,
+      order_amount: req.body.order_amount,
+      order_meta: {
+        return_url: req.body.order_meta.return_url,
+        notify_url: req.body.order_meta.notify_url,
+        payment_methods: req.body.order_meta.payment_methods
+      },
+      order_expiry_time: req.body.order_expiry_time
+    }
+  };
 
-  var request = req.body;
+  console.log('Order payload is ', options.data);
 
   try {
-    const resp = await Cashfree.PGCreateOrder("2023-08-01", request);
+    // Make the request to Cashfree
+    const resp = await axios.request(options);
+
+    // Prepare data for saving to the database
     const orderToSave = {
-      order_amount: request.order_amount,
-      order_currency: request.order_currency,
-      order_id: request.order_id,
-      customer_id: request.customer_details.customer_id,
-      order_meta: request.order_meta,
-      order_expiry_time: request.order_expiry_time
+      order_amount: options.data.order_amount,
+      order_currency: options.data.order_currency,
+      order_id: options.data.order_id,
+      customer_id: options.data.customer_details.customer_id,
+      order_meta: options.data.order_meta,
+      order_expiry_time: options.data.order_expiry_time
     };
 
-    const data = new PaymentOrder(orderToSave); // Use the correct model name
-    const resp1 = await data.save();
+    // Save the order to the database
+    const data = new PaymentOrder(orderToSave);
+    await data.save();
+
+    // Return response to the frontend
     return res.status(200).json(resp.data);
   } catch (error) {
-    console.log(error);
-    return res.status(401).json({ msg: "Error in creating payment order" });
+    console.error(error);
+    return res.status(401).json({ msg: 'Error in creating payment order' });
   }
 };
+
 const updateBalance = async (user_id,amount)=>{
   try {
     // Update user's wallet balance by incrementing it with the specified amount
@@ -61,8 +92,8 @@ const updateOrderStatus = async (req, res) => {
     const order = await PaymentOrder.findOne({ order_id: orderId }); // Use the correct model name
     const headers = {
       'Content-Type': 'application/json',
-      'x-client-id': process.env.CASHFREE_CLIENT_ID_TEST,
-      'x-client-secret': process.env.CASHFREE_CLIENT_SECRET_TEST,
+      'x-client-id': process.env.CASHFREE_CLIENT_ID,
+      'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
       'x-api-version': '2023-08-01'
     };
 
