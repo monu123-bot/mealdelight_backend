@@ -43,6 +43,17 @@ const paymentOrderSchema = new mongoose.Schema({
         type: Date,
         required: true
     }
+    ,
+    claim_status:{
+        type:String,
+        enum:['Not claimed','Under review','Payment completed','Payment rejected'],
+        default:'Not claimed'
+    }
+    ,
+    isClaimed:{
+        type:Boolean,
+        default:false
+    }
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
 });

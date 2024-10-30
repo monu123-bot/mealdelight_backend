@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const {createOrder,updateOrderStatus} = require('../Controller/Payment')
+const {createOrder,updateOrderStatus,claimPayment} = require('../Controller/Payment')
 const { userAuth } = require('../Middleware/userAuth')
 
 // const {} = require('../middleware/Auth')
@@ -10,4 +10,5 @@ const PaymentRouter = express.Router()
 const jsonparser = bodyParser.json()
 PaymentRouter.post("/create_order",userAuth,createOrder)
 PaymentRouter.post("/update_order_status",userAuth,updateOrderStatus)
+PaymentRouter.post("/claim",userAuth,claimPayment)
 module.exports = PaymentRouter

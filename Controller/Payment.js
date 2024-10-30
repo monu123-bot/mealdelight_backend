@@ -5,10 +5,11 @@ const axios = require('axios');
 // Import models
 const User = require("../Models/User");
 const PaymentOrder = require("../Models/PaymentOrder");
+const { sentOtp } = require("./Phone");
 const createOrder = async (req, res) => {
   const options = {
     method: 'POST',
-    url: 'https://api.cashfree.com/pg/orders',
+    url: process.env.CASHFREE_PORT,
     headers: {
       accept: 'application/json',
       'x-api-version': '2023-08-01',
@@ -124,5 +125,32 @@ const updateOrderStatus = async (req, res) => {
     res.status(401).json({ msg: 'Error in fetching order status' });
   }
 };
+const claimPayment = async (req, res) => {
+  const orderId = req.body.order_id;
 
-module.exports = { createOrder, updateOrderStatus };
+  try {
+    // Find the payment order by order_id
+    const order = await PaymentOrder.findOne({ order_id: orderId });
+
+    // Check if order exists
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Check if the order is already claimed
+    if (order.isClaimed) {
+      return res.status(400).json({ message: 'Order has already been claimed' });
+    }
+    
+    // Update the order to mark it as claimed and under review
+    order.isClaimed = true;
+    order.claim_status = 'Under review';
+    await order.save();
+
+    return res.status(200).json({ message: 'Claim submitted successfully', order });
+  } catch (error) {
+    console.error("Error in claiming payment:", error);
+    return res.status(500).json({ message: 'Error in claiming payment' });
+  }
+};
+module.exports = { createOrder, updateOrderStatus,claimPayment };
