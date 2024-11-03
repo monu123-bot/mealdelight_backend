@@ -9,53 +9,8 @@ const generateOtp = () => {
 };
 
 // Simulated SMS service function to send OTP
-const sentSMS = async (otp, phone) => {
-    var options = {
-        'method': 'POST',
-        'hostname': 'your-sms-service.com', // Replace with your SMS service base URL
-        'path': '/2fa/2/pin?ncNeeded=true',
-        'headers': {
-            'Authorization': 'Bearer your-authorization-token', // Add your authorization token
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        'maxRedirects': 20
-    };
 
-    return new Promise((resolve, reject) => {
-        const req = https.request(options, function (res) {
-            let chunks = [];
 
-            res.on('data', function (chunk) {
-                chunks.push(chunk);
-            });
-
-            res.on('end', function () {
-                const body = Buffer.concat(chunks);
-                console.log(body.toString());
-                resolve(body.toString());
-            });
-
-            res.on('error', function (error) {
-                console.error(error);
-                reject(error);
-            });
-        });
-
-        const postData = JSON.stringify({
-            "applicationId": "1234567", // Replace with your actual app ID
-            "messageId": "7654321", // Replace with your actual message ID
-            "from": "YourServiceName", // Sender name or number
-            "to": phone, // The phone number receiving the OTP
-            "placeholders": {
-                "otp": otp // OTP placeholder sent to user
-            }
-        });
-
-        req.write(postData);
-        req.end();
-    });
-};
 const isPhoneValid = (val)=>{
     if(!val){
         return false
@@ -80,54 +35,101 @@ const isPhoneValid = (val)=>{
   return false;
   }
 // Controller to send OTP
-const sentOtp = async (req, res) => {
+
+const sendOtp = async (req, res) => {
     const { phone } = req.body;
 
-    // Check if the phone number is provided
+    // Validate phone input
     if (!phone) {
         return res.status(400).json({ msg: 'Phone number is required.' });
     }
 
-    // Validate phone number format according to Indian standards
-    const isValidPhone = isPhoneValid(phone); // Assuming you have the `isPhoneValid` function from before
-    if (!isValidPhone) {
+    // Validate phone number format
+    if (!isPhoneValid(phone)) {
         return res.status(400).json({ msg: 'Invalid phone number format.' });
     }
 
     try {
-        // Check if the phone number is already registered in the database
-        const existingUser = await User.findOne({ phone: phone });
+        // Check if the phone number is already registered
+        const existingUser = await User.findOne({ phone });
         if (existingUser) {
             return res.status(201).json({ msg: 'Phone number already registered.' });
         }
 
-        // Generate OTP and expiration time (5 minutes from now)
-        const otp = generateOtp(); // Assuming this function generates an OTP
-        const expireAt = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
+        // Generate OTP and set expiration time (5 minutes from now)
+        const otp = generateOtp();
+        const expireAt = Date.now() + 5 * 60 * 1000;
 
         console.log('Sending OTP to phone:', phone, otp);
 
-        // Send OTP via SMS
-        // Uncomment the line below when you have the actual SMS sending service integrated
-        // await sentSMS(otp, phone);
+        // Send OTP via Infobip API (WhatsApp message template)
+        const options = {
+            method: 'POST',
+            hostname: 'mm55k6.api.infobip.com',
+            path: '/whatsapp/1/message/template',
+            headers: {
+                Authorization: 'App 314cf76906e6e8c0b058df3319ca0943-66cd03b4-5ccf-44b1-9562-0649a4d5ff43',
+                'Content-Type': 'application/json',
+                Accept: 'application/json'
+            },
+            maxRedirects: 20
+        };
 
-        // Store OTP in the database with phone and expiration time
-        const otpData = new Otp({
-            phone: phone, // Associate the OTP with the phone number
-            otp: otp,
-            expireAt: expireAt
+        const postData = JSON.stringify({
+            messages: [
+                {
+                    from: '447860099299',
+                    to: `91${phone}`,
+                    messageId: 'fc83b2b3-1fe0-45e5-9608-6174db09578d',
+                    content: {
+                        templateName: 'test_whatsapp_template_en',
+                        templateData: {
+                            body: {
+                                placeholders: [`${otp} is your OTP for Meal delight` ]
+                            }
+                        },
+                        language: 'en'
+                    }
+                }
+            ]
         });
 
-        const resp = await otpData.save(); // Save OTP and phone to the database
+        const apiRequest = https.request(options, (apiResponse) => {
+            let chunks = [];
 
-        // Respond with success and OTP details (in a real system, you wouldn't send the OTP in the response)
-        res.status(200).json(resp);
+            apiResponse.on('data', (chunk) => {
+                chunks.push(chunk);
+            });
+
+            apiResponse.on('end', () => {
+                const body = Buffer.concat(chunks);
+                console.log('Infobip response:', body.toString());
+            });
+
+            apiResponse.on('error', (error) => {
+                console.error('Error from Infobip:', error);
+            });
+        });
+
+        apiRequest.write(postData);
+        apiRequest.end();
+
+        // Store OTP and expiration in the database
+        const otpData = new Otp({
+            phone,
+            otp,
+            expireAt
+        });
+
+        const savedOtp = await otpData.save();
+
+        // Respond with success message (do not send OTP in production response)
+        res.status(200).json({ msg: 'OTP sent successfully', otpId: savedOtp._id });
     } catch (error) {
         console.error('Error in sending OTP:', error);
         res.status(500).json({ msg: 'Error in sending OTP from backend.' });
     }
 };
-
 const verifyOtp = async(req,res)=>{
     const id = req.body.id
     const otp = req.body.otp
@@ -148,4 +150,4 @@ const verifyOtp = async(req,res)=>{
 
 }
 
-module.exports = {sentOtp,verifyOtp}
+module.exports = {sendOtp,verifyOtp}

@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const { sentOtp,verifyOtp } = require('../Controller/Phone')
+const { sendOtp,verifyOtp } = require('../Controller/Phone')
 // const {sentOtp,verifyOtp} = require('../Controller/Plans')
 
 // const {} = require('../middleware/Auth')
@@ -9,5 +9,5 @@ const PhoneRouter = express.Router()
 
 const jsonparser = bodyParser.json()
 PhoneRouter.post("/verifyotp",verifyOtp)
-PhoneRouter.post("/sentotp",sentOtp)
+PhoneRouter.post("/sentotp",sendOtp)
 module.exports = PhoneRouter
