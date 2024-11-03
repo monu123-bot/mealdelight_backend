@@ -36,7 +36,7 @@ const createOrder = async (req, res) => {
     }
   };
 
-  console.log('Order payload is ', options.data);
+  // console.log('Order payload is ', options.data);
 
   try {
     // Make the request to Cashfree
@@ -59,7 +59,7 @@ const createOrder = async (req, res) => {
     // Return response to the frontend
     return res.status(200).json(resp.data);
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return res.status(401).json({ msg: 'Error in creating payment order' });
   }
 };
