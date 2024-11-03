@@ -9,7 +9,7 @@ const { sentOtp } = require("./Phone");
 const createOrder = async (req, res) => {
   const options = {
     method: 'POST',
-    url: process.env.CASHFREE_PORT,
+    url: `${process.env.CASHFREE_PORT}/orders`,
     headers: {
       accept: 'application/json',
       'x-api-version': '2023-08-01',
@@ -59,7 +59,7 @@ const createOrder = async (req, res) => {
     // Return response to the frontend
     return res.status(200).json(resp.data);
   } catch (error) {
-    console.log(error);
+    console.log('error is ',error);
     return res.status(401).json({ msg: 'Error in creating payment order' });
   }
 };
