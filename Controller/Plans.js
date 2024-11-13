@@ -9,26 +9,7 @@ const PlansTransaction = require('../Models/PlansTransaction');
 const mongoose = require('mongoose')
 
 const getPlans = async (req, res) => {
-    // try {
-    //     let userId = req.user
-    //     const page = parseInt(req.query.page) || 1; // Get page number from query parameter, default to 1
-    //     const limit = parseInt(req.query.limit) || 5; // Get limit from query parameter, default to 5
-    //     const skip = (page - 1) * limit;
-    
-    //     // Fetch plans with pagination
-    //     const plans = await Plans.find()
-    //       .skip(skip)
-    //       .limit(limit);
-    
-    //     // Check if there are more plans
-    //     const totalPlans = await Plans.countDocuments();
-    //     const hasMore = skip + limit < totalPlans;
-    
-    //     res.status(200).json({ plans, hasMore });
-    //   } catch (error) {
-    //     console.error('Error fetching plans:', error);
-    //     res.status(500).json({ message: 'Internal server error' });
-    //   }
+   
 
 
     try {
@@ -270,6 +251,54 @@ const fetchMyPlans = async (req,res)=>{
         res.status(500).json({ message: 'Internal server error' });
       }
 }
+const get5Plans = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1; // Get page number from query parameter, default to 1
+    const limit = parseInt(req.query.limit) || 5; // Get limit from query parameter, default to 5
+    const skip = (page - 1) * limit;
 
+    // Aggregation pipeline
+    const plans = await Plans.aggregate([
+      // {
+      //   $match: { isHome: true } // Filter plans where isHome is true
+      // },
+      {
+        $skip: skip // Pagination: skip
+      },
+      {
+        $limit: limit // Pagination: limit
+      }
+    ]);
 
-  module.exports = { getPlans ,Subscribe,fetchMyPlans};
+    res.status(200).json({ plans });
+  } catch (error) {
+    console.error('Error fetching plans:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+  const getPlanDetails = async (req, res) => {
+    try {
+      // Retrieve plan_id from query parameters
+      const planId = req.query.id;
+  
+      if (!planId) {
+        return res.status(400).json({ message: "Plan ID is required" });
+      }
+  
+      // Fetch plan details from the database
+      const plan = await Plans.findById(planId);
+  
+      if (!plan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+  
+      // Respond with the plan details
+      res.status(200).json(plan);
+    } catch (error) {
+      console.error("Error fetching plan details:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };
+  
+  module.exports = { getPlans ,Subscribe,fetchMyPlans,get5Plans,getPlanDetails};

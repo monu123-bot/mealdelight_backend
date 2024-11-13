@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const {getPlans,Subscribe,fetchMyPlans} = require('../Controller/Plans')
+const {getPlans,Subscribe,fetchMyPlans,get5Plans,getPlanDetails} = require('../Controller/Plans')
 const { userAuth } = require('../Middleware/userAuth')
 // const {} = require('../middleware/Auth')
 // const passport = require('passport');
@@ -10,4 +10,6 @@ const jsonparser = bodyParser.json()
 PlansRouter.get("/get_plans",userAuth,getPlans)
 PlansRouter.post("/subscribe",userAuth,Subscribe)
 PlansRouter.get("/get_my_plans",userAuth,fetchMyPlans)
+PlansRouter.get("/get_all_plans",get5Plans)
+PlansRouter.get("/plandetails",getPlanDetails)
 module.exports = PlansRouter

@@ -25,6 +25,10 @@ const planSchema = new mongoose.Schema({
     menu:{
         type:String,
         required:true
+    },
+    isHome:{
+        type:Boolean,
+        default:false
     }
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
