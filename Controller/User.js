@@ -202,4 +202,27 @@ const getSubscriptionHistory = async (req,res)=>{
     }
   
 }
-module.exports = {login,createUser,fetchUserDetails,getPaymentHistory,getSubscriptionHistory}
+
+const VerifyToken = async (req, res) => {
+  try {
+    // Get userId from the request (assumes middleware has set req.user after token verification)
+    const userId = req.user;
+    console.log('User ID is:', userId);
+
+    // Find the user in the database by ID
+    const user = await User.findById(userId);
+
+    // Check if user exists
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Send the user details as the response
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = {login,createUser,fetchUserDetails,getPaymentHistory,getSubscriptionHistory,VerifyToken}
