@@ -45,7 +45,7 @@ const UserSchema = mongoose.Schema({
     },
     street: {
         type: String,
-        required: true,
+        
         trim: true
       },
       apartment: {
@@ -54,12 +54,12 @@ const UserSchema = mongoose.Schema({
       },
       city: {
         type: String,
-        required: true,
+        
         trim: true
       },
       state: {
         type: String,
-        required: true,
+        
         trim: true
       },
       country: {
@@ -68,7 +68,7 @@ const UserSchema = mongoose.Schema({
       },
       postalCode: {
         type: String,
-        required: true,
+        
         trim: true
       },
       walletbalance:{
@@ -77,7 +77,7 @@ const UserSchema = mongoose.Schema({
       },
       address:{
         type:String,
-        required:true
+        
 
       },
       plans:[{

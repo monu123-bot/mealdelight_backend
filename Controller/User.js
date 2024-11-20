@@ -73,7 +73,7 @@ const login = async (req, res) => {
 
 const createUser =async (req,res) =>{
     try {
-        const { firstName, lastName, email, phone, password, street, apartment, city, state, postalCode,address } = req.body;
+        const { firstName, lastName, email, phone, password } = req.body;
     
         const existingUser = await User.findOne({ phone });
         if (existingUser) {
@@ -88,12 +88,7 @@ const createUser =async (req,res) =>{
           email,
           phone,
           password: hashedPassword,
-          street,
-          apartment,
-          city,
-          state,
-          postalCode,
-          address
+          
         });
     
         await user.save();
