@@ -1,12 +1,16 @@
 const mongoose   = require('mongoose')
 
 const DelAddressSchema = mongoose.Schema({
-    
-    name:{
+    user_id:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'users', // Referencing the 'users' collection
+      required: true
+    },
+    recievers_name:{
         type:String,
         required:true
     },
-    phone:{
+    recievers_phone:{
         type:String,
         
         required:true
@@ -55,5 +59,5 @@ const DelAddressSchema = mongoose.Schema({
 
 })
 // DelAddressSchema.plugin(passportLocalMongoose);
-module.exports = mongoose.models.DelAddressSchema || mongoose.model('user', DelAddressSchema);
+module.exports = mongoose.models.DelAddressSchema || mongoose.model('deliveryAddress', DelAddressSchema);
 // module.exports = mongoose.model('user',DelAddressSchema)

@@ -8,6 +8,7 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const PaymentOrder = require('../Models/PaymentOrder');
 const PlansTransaction = require('../Models/PlansTransaction');
+const DeliveryAddress = require('../Models/DeliveryAddress');
 
 const verifyLogin = async (req,res)=>{
 
@@ -220,4 +221,97 @@ const VerifyToken = async (req, res) => {
   }
 };
 
-module.exports = {login,createUser,fetchUserDetails,getPaymentHistory,getSubscriptionHistory,VerifyToken}
+const addAddress = async (req, res) => {
+  try {
+    const user_id = new mongoose.Types.ObjectId(req.user)
+      // Validate the request body
+      const {
+          recievers_name,
+          recievers_phone,
+          street,
+          apartment,
+          city,
+          state,
+          country,
+          postalCode,
+          address
+      } = req.body;
+
+      if (
+          !recievers_name ||
+          !recievers_phone ||
+          !street ||
+          !city ||
+          !state ||
+          !postalCode ||
+          !address
+      ) {
+          return res.status(400).json({ message: "All required fields must be filled" });
+      }
+
+      // Save address to the database
+      const newAddress = new DeliveryAddress({
+        user_id,
+          recievers_name,
+          recievers_phone,
+          street,
+          apartment,
+          city,
+          state,
+          country: country || "IN",
+          postalCode,
+          address,
+          createdAt: Date.now()
+      });
+
+      await newAddress.save();
+
+      // Send success response
+      return res.status(201).json({
+          message: "Address added successfully",
+          address: newAddress
+      });
+  } catch (error) {
+      console.error('Error in saving address:', error.message);
+      return res.status(500).json({
+          message: "Internal Server Error",
+          error: error.message
+      });
+  }
+};
+
+const fetchAddress = async (req, res) => {
+  try {
+    // Extract page and limit from query params
+    // const { page = 1, limit = 2 } = req.query;
+
+    // Assuming the user ID is available from `req.user` (via `authenticateToken` middleware)
+    const userId = new mongoose.Types.ObjectId(req.user);
+
+    // Calculate the skip value for pagination
+    // const skip = (page - 1) * limit;
+
+    // Fetch the addresses with pagination
+    const addresses = await DeliveryAddress.find({ user_id:userId }).lean(); // `lean()` gives plain JavaScript objects instead of Mongoose documents
+
+    // Count the total number of addresses for the user
+    const totalAddresses = await DeliveryAddress.countDocuments({ user_id:userId });
+
+    // Determine if more addresses are available
+    // const hasMore = skip + addresses.length < totalAddresses;
+
+    return res.status(200).json({
+      address: addresses,
+      hasMore:false,
+    });
+  } catch (error) {
+    console.error('Error fetching addresses:', error.message);
+    return res.status(500).json({
+      message: 'Failed to fetch addresses',
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = {login,createUser,fetchUserDetails,getPaymentHistory,getSubscriptionHistory,VerifyToken,addAddress,fetchAddress}
