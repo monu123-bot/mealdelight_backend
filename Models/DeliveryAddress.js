@@ -50,7 +50,11 @@ const DelAddressSchema = mongoose.Schema({
         required:true
 
       },
+      isDefault:{
+type:Boolean,
+require:true
 
+      },
     createdAt:{
         type:Number,
         default:Date.now()

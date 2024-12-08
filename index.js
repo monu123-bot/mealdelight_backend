@@ -8,6 +8,7 @@ const cors = require('cors');
 const Coupon = require("./Models/Coupon");
 const secretKeyJWT = "asdasdsadasdasdasdsa";
 const planSchema = require('./Models/Plans')
+const DarkKitchen = require('./Models/DarkKitchen')
 // Database Connection
 const db = require('./config/db');
 // console.log(db)
@@ -66,7 +67,7 @@ app.use(
       }
   
       // Create a new plan
-      const newPlan = new planSchema({
+      const newPlan = new planSchema({                          
         name,
         price,
         discount: discount || 0, // Default discount to 0 if not provided
@@ -122,17 +123,64 @@ app.use(
 
   
 // addCoupon()
-  
+async function addDarkKitchen({ name, locationType, coordinates,state,city,startDate }) {
+  try {
+    // Validate required fields
+    if (!name || !locationType || !coordinates || coordinates.length !== 2) {
+      throw new Error('All required fields (name, locationType, coordinates) must be provided.');
+    }
+
+    // Create the darkKitchen document
+    const newDarkKitchen = new DarkKitchen({
+      name,
+      location: {
+        type: locationType,
+        coordinates,
+      },
+      state,
+      city,
+      startDate
+
+    });
+
+    // Save to the database
+    const savedDarkKitchen = await newDarkKitchen.save();
+    console.log('DarkKitchen added successfully:', savedDarkKitchen);
+    return savedDarkKitchen;
+  } catch (error) {
+    console.error('Error adding darkKitchen:', error.message);
+    throw error;
+  }
+}
+const addKitchen = async ()=>{
+  try {
+    const newDarkKitchen = await addDarkKitchen({
+      name: 'This Kitchen',
+      locationType: 'Point',
+      coordinates: [77.1025, 28.7041], // Longitude and Latitude
+      state:'Haryana',
+      city:'Gurugram',
+      startDate:Date.now()
+    });
+    console.log('New DarkKitchen:', newDarkKitchen);
+  } catch (error) {
+    console.error('Failed to add DarkKitchen:', error.message);
+  }
+}
+
+addKitchen()
 const UserRouter = require('./Routes/User');
 const PaymentRouter = require('./Routes/Payment');
 const PlansRouter = require('./Routes/Plans');
 const CouponsRouter = require('./Routes/Coupons')
-const PhoneRouter = require('./Routes/Phone')
+const PhoneRouter = require('./Routes/Phone');
+const DarkKitchenRouter = require('./Routes/DarkStores');
 app.use("/user", UserRouter);
 app.use("/payment",PaymentRouter)
 app.use("/plans",PlansRouter)
 app.use("/coupons",CouponsRouter)
 app.use("/phone",PhoneRouter)
+app.use("/darkkitchen",DarkKitchenRouter)
 app.listen(PORT, () => {
   console.log('Server is running on port:', PORT);
 });

@@ -234,7 +234,8 @@ const addAddress = async (req, res) => {
           state,
           country,
           postalCode,
-          address
+          address,
+          isDefault
       } = req.body;
 
       if (
@@ -244,7 +245,7 @@ const addAddress = async (req, res) => {
           !city ||
           !state ||
           !postalCode ||
-          !address
+          !address 
       ) {
           return res.status(400).json({ message: "All required fields must be filled" });
       }
@@ -261,6 +262,7 @@ const addAddress = async (req, res) => {
           country: country || "IN",
           postalCode,
           address,
+          isDefault,
           createdAt: Date.now()
       });
 
