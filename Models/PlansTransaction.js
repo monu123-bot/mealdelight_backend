@@ -11,6 +11,11 @@ const plansTransaction = new mongoose.Schema({
         ref:'plans',
         required:true
     },
+    address_id:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'deliveryAddress',
+        required:true
+    },
     coupon_id:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'coupons',

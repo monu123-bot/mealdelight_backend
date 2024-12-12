@@ -49,6 +49,11 @@ const darkKitchen = new mongoose.Schema({
     type:String,
   }
   ,
+  postalCode: {
+    type: String,
+    required: true,
+    trim: true
+  },
   startDate:{
     type:Date,
   },

@@ -123,7 +123,7 @@ app.use(
 
   
 // addCoupon()
-async function addDarkKitchen({ name, locationType, coordinates,state,city,startDate }) {
+async function addDarkKitchen({ name, locationType, coordinates,state,city,postalCode,startDate }) {
   try {
     // Validate required fields
     if (!name || !locationType || !coordinates || coordinates.length !== 2) {
@@ -139,6 +139,7 @@ async function addDarkKitchen({ name, locationType, coordinates,state,city,start
       },
       state,
       city,
+      postalCode,
       startDate
 
     });
@@ -158,8 +159,9 @@ const addKitchen = async ()=>{
       name: 'This Kitchen',
       locationType: 'Point',
       coordinates: [77.1025, 28.7041], // Longitude and Latitude
-      state:'Haryana',
-      city:'Gurugram',
+      state:'Telangana',
+      city:'Hyderabad',
+      postalCode:500081,
       startDate:Date.now()
     });
     console.log('New DarkKitchen:', newDarkKitchen);
@@ -168,7 +170,7 @@ const addKitchen = async ()=>{
   }
 }
 
-addKitchen()
+// addKitchen()
 const UserRouter = require('./Routes/User');
 const PaymentRouter = require('./Routes/Payment');
 const PlansRouter = require('./Routes/Plans');

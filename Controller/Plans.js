@@ -6,7 +6,8 @@ const Coupon = require('../Models/Coupon');
 // const User = require('../Models/User');
 const PlansTransaction = require('../Models/PlansTransaction');
 // const Transaction = require('../Models/Transaction'); // Adjust path as necessary
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const DeliveryAddress = require('../Models/DeliveryAddress');
 const getPlans = async (req, res) => {
   try {
       const page = parseInt(req.query.page) || 1; // Page number from query parameter, default to 1
@@ -33,7 +34,7 @@ const getPlans = async (req, res) => {
 const Subscribe = async (req, res) => {
   const planId = req.body.planId;
   const couponName = req.body.couponName;
-  
+  const addressId = req.body.addressId;
   try {
       const currentDate = new Date();
      console.log(currentDate)
@@ -43,7 +44,7 @@ const Subscribe = async (req, res) => {
           plan_id:new mongoose.Types.ObjectId(planId),
           expiringAt:{$gte:currentDate}
       });
-
+     const address = await DeliveryAddress.findOne({_id:addressId})
      console.log('existing transaction ',existingTransaction)
       let remainingDays = 0; // Initialize remaining days
       if (existingTransaction) {
@@ -78,6 +79,7 @@ const Subscribe = async (req, res) => {
           const transactionData = {
               user_id: user1._id,
               plan_id: plan._id,
+              address_id:address._id,
               coupon_id: coupon ? coupon._id : null, // Store coupon ID if applied
               amount: requiredAmount,
               expiringAt: newExpiringAt, // Set new expiring date

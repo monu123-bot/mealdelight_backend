@@ -146,7 +146,7 @@ const getSubscriptionHistory = async (req,res)=>{
       // Fetch user's transactions with pagination
       const result = await PlansTransaction.aggregate([
         {
-          $match: { user_id:new mongoose.Types.ObjectId(userId) } // Fetch transactions for the specific user
+          $match: { user_id: new mongoose.Types.ObjectId(userId) } // Fetch transactions for the specific user
         },
         {
           $lookup: {
@@ -158,6 +158,20 @@ const getSubscriptionHistory = async (req,res)=>{
         },
         {
           $unwind: '$planDetails' // Unwind the `planDetails` array (since we're only fetching one plan per transaction)
+        },
+        {
+          $lookup: {
+            from: 'deliveryaddresses', // Name of the `deliveryAddress` collection
+            localField: 'address_id', // Field in `plansTransaction`
+            foreignField: '_id', // Field in `deliveryAddress` collection
+            as: 'addressDetails' // Store the result in `addressDetails`
+          }
+        },
+        {
+          $unwind: {
+            path: '$addressDetails',
+            preserveNullAndEmptyArrays: true // In case there is no matching address
+          }
         },
         {
           $addFields: {
@@ -174,7 +188,16 @@ const getSubscriptionHistory = async (req,res)=>{
             _id: 0, // Do not return the _id field
             planName: '$planDetails.name', // Plan name from `planDetails`
             purchaseDate: '$createdAt', // Transaction purchase date
-            expiryDate: 1 // Calculated expiry date
+            expiryDate: 1, // Calculated expiry date
+            address: {
+              street: '$addressDetails.street',
+              apartment: '$addressDetails.apartment',
+              city: '$addressDetails.city',
+              state: '$addressDetails.state',
+              country: '$addressDetails.country',
+              postalCode: '$addressDetails.postalCode',
+              
+            }
           }
         },
         {
@@ -184,6 +207,7 @@ const getSubscriptionHistory = async (req,res)=>{
           $limit: limit // Limit the number of documents returned
         }
       ]);
+      
   
       // Count total transactions for the user
       const total = await PlansTransaction.countDocuments({ user_id:userId });
