@@ -28,6 +28,10 @@ const plansTransaction = new mongoose.Schema({
     expiringAt:{
         type:Date,
         required:true
+    },
+    pausedDates:{
+        type:Array
+        
     }
 },{
 

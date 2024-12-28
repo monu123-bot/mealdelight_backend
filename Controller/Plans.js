@@ -277,5 +277,67 @@ const get5Plans = async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
     }
   };
+  const pausePlan = async (req, res) => {
+    const { PausePlanTransactionId,selectedDates } = req.body;
+    const userId = req.user;  // Assuming user is attached to the request object by middleware
   
-  module.exports = { getPlans ,Subscribe,fetchMyPlans,get5Plans,getPlanDetails};
+    if (!PausePlanTransactionId || !selectedDates) {
+      return res.status(400).json({ message: 'planTransactionId and selectedDates are required.' });
+    }
+  
+    try {
+      // Find the plansTransaction document by planTransactionId
+      const planTransaction = await PlansTransaction.findById(PausePlanTransactionId);
+  
+      if (!planTransaction) {
+        return res.status(404).json({ message: 'Plan transaction not found.' });
+      }
+  
+      // Check if the userId in the request matches the userId in the planTransaction document
+      if (planTransaction.user_id.toString() !== userId.toString()) {
+        return res.status(403).json({ message: 'You are not authorized to modify this plan.' });
+      }
+  
+      // Add selected dates to the pausedDates array
+      // Ensure that only unique dates are added to avoid duplicates
+      
+  
+      // Update the pausedDates field
+      planTransaction.pausedDates = selectedDates;
+  
+      // Save the updated document
+      await planTransaction.save();
+  
+      res.status(200).json({ message: 'Dates saved successfully!', selectedDates });
+    } catch (err) {
+      console.error('Error saving dates:', err);
+      res.status(500).json({ message: 'Failed to save dates.' });
+    }
+  };
+  
+  const getPausedSlots = async (req, res) => {
+    const { planTransactionId } = req.params;
+    const userId = new mongoose.Types.ObjectId(req.user); // Convert userId from token to ObjectId
+    
+    try {
+      // Find the plan transaction by ID and ensure it belongs to the correct user
+      const planTransaction = await PlansTransaction.findById(planTransactionId);
+      console.log(planTransaction.user_id, userId);
+  
+      if (!planTransaction) {
+        return res.status(404).json({ message: 'Plan transaction not found.' });
+      }
+  
+      // Check if the planTransaction belongs to the current user by comparing ObjectIds
+      if (!planTransaction.user_id.equals(userId)) {
+        return res.status(403).json({ message: 'You do not have permission to access this plan.' });
+      }
+  
+      // Return the pausedSlots data
+      res.status(200).json({ pausedSlots: planTransaction.pausedDates });
+    } catch (err) {
+      console.error('Error fetching paused slots:', err);
+      res.status(500).json({ message: 'Failed to fetch paused slots.' });
+    }
+  };
+  module.exports = { getPlans ,Subscribe,fetchMyPlans,get5Plans,getPlanDetails,pausePlan,getPausedSlots};
