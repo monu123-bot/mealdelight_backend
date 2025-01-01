@@ -108,17 +108,24 @@ const updateOrderStatus = async (req, res) => {
     let resp2;
 
     if (response.data[0].payment_status === 'SUCCESS') {
-      resp1 = await PaymentOrder.updateOne(
-        { order_id: orderId },
-        { $set: { order_status: 'SUCCESS' } }
+      // Update the order_status to SUCCESS only if it is not already SUCCESS
+      const resp1 = await PaymentOrder.updateOne(
+          { order_id: orderId, order_status: { $ne: 'SUCCESS' } },
+          { $set: { order_status: 'SUCCESS' } }
       );
-      resp2 = await updateBalance(req.user,order.order_amount)
-    } else {
-      resp1 = await PaymentOrder.updateOne(
-        { order_id: orderId },
-        { $set: { order_status: 'FAILED' } }
+  
+      // If the update was performed, proceed to update the balance
+      if (resp1.modifiedCount > 0) {
+          await updateBalance(req.user, order.order_amount);
+      }
+  } else {
+      // Update the status to FAILED unconditionally
+      await PaymentOrder.updateOne(
+          { order_id: orderId },
+          { $set: { order_status: 'FAILED' } }
       );
-    }
+  }
+  
     res.status(200).json(response.data);
   } catch (error) {
     console.log(error);
