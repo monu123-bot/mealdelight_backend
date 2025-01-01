@@ -45,7 +45,8 @@ const Subscribe = async (req, res) => {
           expiringAt:{$gte:currentDate}
       });
      const address = await DeliveryAddress.findOne({_id:addressId})
-     console.log('existing transaction ',existingTransaction)
+     console.log( 'address is------------------------ ',  address)
+     console.log('existing transaction ',addressId,existingTransaction)
       let remainingDays = 0; // Initialize remaining days
       if (existingTransaction) {
           // Calculate remaining days from the existing transaction
