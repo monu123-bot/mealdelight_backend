@@ -76,10 +76,16 @@ const Subscribe = async (req, res) => {
           const newExpiringAt = new Date(currentDate.getTime() + (plan.period + remainingDays) * 24 * 60 * 60 * 1000);
           console.log('new expiring at ',newExpiringAt)
           // Add new transaction to transactions collection
+          console.log(user1._id)
+          console.log(1)
+          console.log(plan._id)
+          console.log(2)
+          console.log(address._id)
+          console.log(3)
           const transactionData = {
               user_id: user1._id,
               plan_id: plan._id,
-              address_id:address._id,
+              address_id:addressId,
               coupon_id: coupon ? coupon._id : null, // Store coupon ID if applied
               amount: requiredAmount,
               expiringAt: newExpiringAt, // Set new expiring date
