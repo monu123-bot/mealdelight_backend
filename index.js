@@ -177,8 +177,10 @@ const PlansRouter = require('./Routes/Plans');
 const CouponsRouter = require('./Routes/Coupons')
 const PhoneRouter = require('./Routes/Phone');
 const DarkKitchenRouter = require('./Routes/DarkStores');
+const BlogRouter = require('./Routes/Blogs')
 app.use("/user", UserRouter);
 app.use("/payment",PaymentRouter)
+app.use("/blog", BlogRouter);
 app.use("/plans",PlansRouter)
 app.use("/coupons",CouponsRouter)
 app.use("/phone",PhoneRouter)

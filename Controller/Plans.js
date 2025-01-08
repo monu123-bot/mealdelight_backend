@@ -205,6 +205,7 @@ const Subscribe = async (req, res) => {
                     user_id: 1,
                     plan_id: 1,
                     coupon_id: 1,
+
                     amount: 1,
                     purchasedDate: '$createdAt', // Include purchase date (createdAt from PlansTransaction)
                     expiringAt: 1, // Include expiringAt date
@@ -212,7 +213,8 @@ const Subscribe = async (req, res) => {
                     'planDetails.price': 1,
                     'planDetails.discount': 1,
                     'planDetails.menu': 1,
-                    'planDetails.period': 1
+                    'planDetails.period': 1,
+                    
                 }
             },
             {

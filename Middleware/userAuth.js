@@ -8,10 +8,11 @@ const jwt = require('jsonwebtoken');
 
 // Middleware to restrict access to authenticated users only
 exports.userAuth = (req, res, next) => {
+    console.log(req.headers.authorization)
     
     const token = req.headers.authorization.split(" ")[2]
-
-    // console.log("token in require auth  ....",token)
+   
+    console.log("token in require auth  ....",token)
     jwt.verify(token,process.env.SECRET_KEY, (err,data)=>{
       if(err){
         console.log("error is ",err)
