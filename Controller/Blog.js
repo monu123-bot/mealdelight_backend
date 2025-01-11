@@ -12,31 +12,42 @@ const tagSchema = require("../Models/Tags")
 // const NotificationSchema = require('../models/Notification')
 // const sendEmail = require('../functions/SendEmail')
 const fhost = process.env.FRONTENDLINK
-const fetchBlogs = async(req,res)=>{
+const fetchBlogs = async (req, res) => {
+  const pageNo = req.body.pageNo || 1;
+  const searchText = req.body.searchText || "";
+  console.log(searchText);
 
-  const pageNo = req.body.pageNo
-  const searchText = req.body.searchText
-  
-  
-  const psize = 10
-  const skip = (pageNo-1)*psize
-      try {
-        let blogs
-        if(searchText===''){
-           blogs = await BlogSchema.find({}).sort({createdAt:-1}).skip(skip).limit(psize)
-        }
-        else{
-           blogs = await BlogSchema.find({ $text: { $search: searchText } }, { score: { $meta: "textScore" } }).sort({createdAt:-1}).skip(skip).limit(psize)
+  const psize = 10;
+  const skip = (pageNo - 1) * psize;
 
-        }
-        
-        res.status(200).json(blogs)
+  try {
+    let blogs;
 
-      } catch (error) {
-        console.log(error)
-        res.status(300).json({msg:"error in fetching blogs"})
-      }
-}
+    if (searchText === "") {
+      blogs = await BlogSchema.find({ approved: true })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(psize);
+    } else {
+      blogs = await BlogSchema.find(
+        {
+          approved: true,
+          $text: { $search: searchText },
+        },
+        { score: { $meta: "textScore" } }
+      )
+        .sort({ score: { $meta: "textScore" }, createdAt: -1 })
+        .skip(skip)
+        .limit(psize);
+    }
+
+    res.status(200).json(blogs);
+  } catch (error) {
+    console.error("Error fetching blogs:", error);
+    res.status(500).json({ msg: "Error in fetching blogs" });
+  }
+};
+
 const fetchByTitle = async (req,res)=>{
   const title = req.body.title
   console.log('this is title ',title)
@@ -45,7 +56,8 @@ const fetchByTitle = async (req,res)=>{
   try {
     if(title.slice(0,7)==='ititled'){
        blog = await BlogSchema.aggregate([
-        { $match: {  _id: new mongoose.Types.ObjectId(title.slice(7)) } },
+
+        { $match: {  _id: new mongoose.Types.ObjectId(title.slice(7)) ,approved:true} },
         {
           $lookup: {
             from: 'users',
@@ -75,7 +87,7 @@ const fetchByTitle = async (req,res)=>{
     }
     else{
        blog = await BlogSchema.aggregate([
-        { $match: {  title: title } },
+        { $match: {  title: title,approved:true } },
         {
           $lookup: {
             from: 'users',
@@ -219,7 +231,7 @@ const fetchTags = async (req,res)=>{
 const checkTitle = async (req,res)=>{
   const tname = req.query.tname
   try {
-    const tlist =await BlogSchema.find({title: { $regex: `^${tname}$`, $options: 'i' }})
+    const tlist =await BlogSchema.find({title: { $regex: `^${tname}$`, $options: 'i' },approved:true})
     res.status(200).json(tlist)
   } catch (error) {
     res.status(300).json({msg:'error in fetching title backend'})
@@ -320,7 +332,7 @@ const fetchBlogsWithTags = async (req,res)=>{
       },
       {
         $match: {
-          tagMatchCount: { $gt: 0 }
+          tagMatchCount: { $gt: 0 },approved:true
         }
       },
       {

@@ -45,6 +45,10 @@ const blogPostSchema = new mongoose.Schema({
     views:{
         type:Number,
         default:0
+    },
+    approved:{
+        type:Boolean,
+        default:false
     }
 });
 
