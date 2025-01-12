@@ -8,7 +8,8 @@ const {  fetchBlogs,
     checkTitle,
     add,
     // fetchBlogsWithAuthor,
-    fetchBlogsWithTags
+    fetchBlogsWithTags,
+    getHomeBlogs
 } = require('../Controller/Blog')
 // const { requiresAuth } = require('../Middleware/userAuth')
 const { userAuth } = require('../Middleware/userAuth')
@@ -19,6 +20,7 @@ const jsonparser = bodyParser.json()
 
 BlogRouter.post("/fetchwithinp",fetchBlogs)
 BlogRouter.post("/fetchbytitle",fetchByTitle)
+BlogRouter.get("/homeBlogs",getHomeBlogs)
 // BlogRouter.get("/checkisclapped",requiresAuth,checkIsClapped)
 // BlogRouter.post("/like",requiresAuth,like)
 BlogRouter.get("/fetchtags",userAuth,fetchTags)

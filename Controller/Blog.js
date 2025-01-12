@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken')
 const BlogSchema = require('../Models/Blog')
 // const actionSchema = require('../models/Action')
 const tagSchema = require("../Models/Tags")
+const Blog = require('../Models/Blog')
 // const NotificationSchema = require('../models/Notification')
 // const sendEmail = require('../functions/SendEmail')
 const fhost = process.env.FRONTENDLINK
@@ -350,6 +351,22 @@ const fetchBlogsWithTags = async (req,res)=>{
 
   }
 }
+
+const getHomeBlogs =async (req,res)=>{
+  try {
+    // Fetch 5 latest approved blogs sorted by creation date
+    const blogs = await Blog.find({ approved: true })
+        .sort({ createdAt: -1 })
+        .limit(5);
+
+    res.status(200).json(blogs);
+} catch (error) {
+    console.error("Error fetching home blogs:", error);
+    res.status(500).json({ message: "Error fetching blogs" });
+}
+
+}
+
 module.exports = {
     fetchBlogs,
     fetchByTitle,
@@ -359,5 +376,6 @@ module.exports = {
     checkTitle,
     add,
     // fetchBlogsWithAuthor,
-    fetchBlogsWithTags
+    fetchBlogsWithTags,
+    getHomeBlogs
 }
