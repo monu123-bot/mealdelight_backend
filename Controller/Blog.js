@@ -264,10 +264,10 @@ const add = async (req,res)=>{
    const body = req.body.body
    const status = req.body.status
    const tags = req.body.tags
-   const thumbnail = req.user.image
+   const thumbnail = req.body.thumbnail
    const extractedTags = []
    
-   
+  //  console.log(thumbnail)
     //  sendBlogNotification(title,req.user.firstName)
   
 
@@ -279,7 +279,7 @@ const add = async (req,res)=>{
     
    
     const blog = {
-      title:title,body:body,status:status,tags:extractedTags,thumbnail:thumbnail,author:req.user,thumbnail:'#'
+      title:title,body:body,status:status,tags:extractedTags,thumbnail:thumbnail,author:req.user
     }
     const newBlog = new BlogSchema(blog)
     const resp = await newBlog.save()
