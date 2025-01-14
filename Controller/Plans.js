@@ -42,6 +42,7 @@ const Subscribe = async (req, res) => {
       const existingTransaction = await PlansTransaction.findOne({
           user_id: new mongoose.Types.ObjectId(req.user),
           plan_id:new mongoose.Types.ObjectId(planId),
+          address_id:new mongoose.Types.ObjectId(addressId),
           expiringAt:{$gte:currentDate}
       });
      const address = await DeliveryAddress.findOne({_id:addressId})
@@ -205,7 +206,7 @@ const Subscribe = async (req, res) => {
                     user_id: 1,
                     plan_id: 1,
                     coupon_id: 1,
-
+                    address_id:1,
                     amount: 1,
                     purchasedDate: '$createdAt', // Include purchase date (createdAt from PlansTransaction)
                     expiringAt: 1, // Include expiringAt date

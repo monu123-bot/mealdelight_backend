@@ -9,6 +9,10 @@ const planSchema = new mongoose.Schema({
         type:Number,
         required:true
     },
+    thumbnail:{
+        type:String,
+        default:'#'
+    },
     discount:{
         type:Number,
         default:0

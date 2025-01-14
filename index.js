@@ -52,13 +52,14 @@ app.use(
   const addPlan = async () => {
     try {
       // Get data from the request body
-      const { name, price, discount, menu,period ,isCoupon} = {
-        name: 'Trial Plan 3',
-        price: 300,
-        discount: 7,
+      const { name, price, discount, menu,period ,isCoupon,thumbnail} = {
+        name: 'North Indian Plan',
+        price: 4000,
+        discount: 10,
         menu: 'https://www.canva.com/design/DAGS53cj2zw/VID2rEIuW4gf8iMphy8RGQ/view',
-        period:2,
-        isCoupon:true
+        period:30,
+        isCoupon:true,
+        thumbnail:'https://www.eatingwell.com/thmb/6ppa_TjBBdbsguYwOUL99hk2qWc=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/EW-Meal-Plans-Mediterranean-Day-05-3x2-9aa76ee89adc4c56a802a8bc3a7141c8.jpg'
       };
   
       // Validation check for required fields
@@ -73,7 +74,8 @@ app.use(
         discount: discount || 0, // Default discount to 0 if not provided
         menu,
         period,
-        isCoupon
+        isCoupon,
+        thumbnail
       });
   
       // Save the plan to the database
