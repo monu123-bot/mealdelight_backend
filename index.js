@@ -181,6 +181,7 @@ const PhoneRouter = require('./Routes/Phone');
 const DarkKitchenRouter = require('./Routes/DarkStores');
 const DeliveryStatus=require('./Routes/DeliveryStatus')
 const BlogRouter = require('./Routes/Blogs')
+const SurveyRouter = require('./Routes/Survey')
 app.use("/user", UserRouter);
 app.use("/payment",PaymentRouter)
 app.use("/blog", BlogRouter);
@@ -189,6 +190,7 @@ app.use("/coupons",CouponsRouter)
 app.use("/phone",PhoneRouter)
 app.use("/darkkitchen",DarkKitchenRouter)
 app.use('/Delivery',DeliveryStatus)
+app.use('/survey',SurveyRouter)
 app.listen(PORT, () => {
   console.log('Server is running on port:', PORT);
 });
