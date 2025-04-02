@@ -1,7 +1,7 @@
 
 const express = require('express')
 const bodyParser = require('body-parser')
-const { addSurvey } = require('../Controller/Survey')
+const { addSurvey,joinWaitlist}=require('../Controller/Survey')
 // const {sentOtp,verifyOtp} = require('../Controller/Plans')
 
 // const {} = require('../middleware/Auth')
@@ -10,5 +10,6 @@ const SurveyRouter = express.Router()
 
 const jsonparser = bodyParser.json()
 SurveyRouter.post("/marketanalysis",addSurvey)
+SurveyRouter.post("/joinwaitlist",joinWaitlist)
 
 module.exports = SurveyRouter
