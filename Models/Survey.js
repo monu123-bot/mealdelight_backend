@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const surveySchema = new mongoose.Schema({
   phone: { type: String, required: true, unique: true },
   completedSteps: { type: Number, default: 0 },
+  discountCode: { type: String, default: null },
   surveyData: {
     basicInfo: {
       fullName: String,

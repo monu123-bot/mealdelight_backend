@@ -23,13 +23,30 @@ const joinWaitlist = async (req, res) => {
     return res.status(500).json({ message: "Internal server error.", error: error.message });
   }
 }
+
+
+const generateToken =async (phone) => {
+  console.log("Phone number:", phone);
+  let result = [];
+  for (let i = 0; i < phone.length - 1; i++) {
+    let sum = parseInt(phone[i]) + parseInt(phone[i + 1]);
+    result.push(sum);
+  }
+  let chrArr = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
+  let discountCode = '';
+  for (let i = 0; i < result.length; i++) {
+    let index = result[i] % chrArr.length;
+    discountCode += chrArr[index];
+  }
+  return discountCode;
+};
 const addSurvey = async (req, res) => {
   try {
-    const { step, surveyId, step_name, data, basicInfo } = req.body;
-    console.log("Request body:", req.body);
+    const  step  = req.body.step;
     
     // STEP 1: Create a new survey
-    if (step == 1 && basicInfo) {
+    if (step == 1) {
+      const {  step, basicInfo} = req.body;
       const phone = basicInfo.phone;
       
       // Check if phone number already exists
@@ -55,46 +72,141 @@ const addSurvey = async (req, res) => {
     } 
     
     // STEP 2+: Update an existing survey
-    else if (surveyId && step_name && data) {
-      // Validate survey ID
-      if (!mongoose.Types.ObjectId.isValid(surveyId)) {
-        return res.status(400).json({ message: "Invalid survey ID." });
-      }
-      
+    else if (step==2) {
+      const { step,data, surveyId, step_name } = req.body;
+      console.log(data, surveyId, step_name);
       const survey = await Survey.findById(surveyId);
       if (!survey) {
         return res.status(404).json({ message: "Survey not found." });
       }
       
-      // Build the update object using MongoDB dot notation
-      const updateData = {};
-      updateData[`surveyData.${step_name}`] = data;
+      // Update the survey data with the new step data
+      survey.surveyData['location'] = data;
+      survey.completedSteps = step;
       
-      console.log("Updating survey with:", {
-        surveyId,
-        step_name,
-        updateData
+      const updatedSurvey = await survey.save();
+      return res.status(200).json({ 
+        message: "Survey data updated successfully.", 
+        surveyId: updatedSurvey._id 
       });
-      
-      // Use findByIdAndUpdate with MongoDB update operators
-      const updatedSurvey = await Survey.findByIdAndUpdate(
-        surveyId,
-        {
-          $set: updateData,
-          $max: { completedSteps: step } // Only increase if new step is higher
-        },
-        { new: true, runValidators: true }
-      );
-      
-      if (!updatedSurvey) {
-        return res.status(500).json({ message: "Failed to update survey." });
+       
+    } 
+    else if (step==3) {
+      const { step,data, surveyId, step_name } = req.body;
+      console.log(data, surveyId, step_name);
+      const survey = await Survey.findById(surveyId);
+      if (!survey) {
+        return res.status(404).json({ message: "Survey not found." });
       }
       
+      // Update the survey data with the new step data
+      survey.surveyData['currentFoodDetails'] = data;
+      survey.completedSteps = step;
+      
+      const updatedSurvey = await survey.save();
       return res.status(200).json({ 
-        message: "Survey data updated successfully.",
-        surveyId: updatedSurvey._id,
-        completedSteps: updatedSurvey.completedSteps
+        message: "Survey data updated successfully.", 
+        surveyId: updatedSurvey._id 
       });
+       
+    } 
+    else if (step==4) {
+      const { step,data, surveyId, step_name } = req.body;
+      console.log(data, surveyId, step_name);
+      const survey = await Survey.findById(surveyId);
+      if (!survey) {
+        return res.status(404).json({ message: "Survey not found." });
+      }
+      
+      // Update the survey data with the new step data
+      survey.surveyData['mealPreferences'] = data;
+      survey.completedSteps = step;
+      
+      const updatedSurvey = await survey.save();
+      return res.status(200).json({ 
+        message: "Survey data updated successfully.", 
+        surveyId: updatedSurvey._id 
+      });
+       
+    } 
+    else if (step==5) {
+      const { step,data, surveyId, step_name } = req.body;
+      console.log(data, surveyId, step_name);
+      const survey = await Survey.findById(surveyId);
+      if (!survey) {
+        return res.status(404).json({ message: "Survey not found." });
+      }
+      
+      // Update the survey data with the new step data
+      survey.surveyData['workHabitats'] = data;
+      survey.completedSteps = step;
+      
+      const updatedSurvey = await survey.save();
+      return res.status(200).json({ 
+        message: "Survey data updated successfully.", 
+        surveyId: updatedSurvey._id 
+      });
+       
+    } 
+    else if (step==6) {
+      const { step,data, surveyId, step_name } = req.body;
+      console.log(data, surveyId, step_name);
+      const survey = await Survey.findById(surveyId);
+      if (!survey) {
+        return res.status(404).json({ message: "Survey not found." });
+      }
+      
+      // Update the survey data with the new step data
+      survey.surveyData['budget'] = data;
+      survey.completedSteps = step;
+      
+      const updatedSurvey = await survey.save();
+      return res.status(200).json({ 
+        message: "Survey data updated successfully.", 
+        surveyId: updatedSurvey._id 
+      });
+       
+    } 
+    else if (step==7) {
+      const { step,data, surveyId, step_name } = req.body;
+      console.log(data, surveyId, step_name);
+      const survey = await Survey.findById(surveyId);
+      if (!survey) {
+        return res.status(404).json({ message: "Survey not found." });
+      }
+      
+      // Update the survey data with the new step data
+      survey.surveyData['customizations'] = data;
+      survey.completedSteps = step;
+      
+      const updatedSurvey = await survey.save();
+      return res.status(200).json({ 
+        message: "Survey data updated successfully.", 
+        surveyId: updatedSurvey._id 
+      });
+       
+    } 
+    else if (step==8) {
+      const { step,data, surveyId, step_name } = req.body;
+      console.log(data, surveyId, step_name);
+      const survey = await Survey.findById(surveyId);
+      if (!survey) {
+        return res.status(404).json({ message: "Survey not found." });
+      }
+      const discount_token = await generateToken(survey.phone);
+      // Update the survey data with the new step data
+      survey.surveyData['recommendations'] = data;
+      survey.completedSteps = step;
+      survey.discountCode = discount_token;
+      
+      const updatedSurvey = await survey.save();
+      return res.status(200).json({ 
+        message: "Survey data updated successfully.", 
+        surveyId: updatedSurvey._id ,
+        discountCode: discount_token
+
+      });
+       
     } 
     
     else {
