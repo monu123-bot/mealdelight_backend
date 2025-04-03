@@ -1,6 +1,6 @@
 const Survey = require("../Models/Survey");
 const mongoose = require("mongoose");
-const Waitlist = require("../Models/waitlist");
+const Waitlist = require("../Models/Waitlist");
 
 const joinWaitlist = async (req, res) => {
 
