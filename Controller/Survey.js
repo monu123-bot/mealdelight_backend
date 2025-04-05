@@ -401,10 +401,10 @@ const sendSurveyCompletedNotification = async (req, res) => {
 
       // Skip if email is not available
       if (!email) continue;
+      const surveyLink = `${process.env.CLIENT_URL}/survey/continue/${survey._id}`;
 
       const subject = "Complete Your Meal Preference Survey";
       const text = `Hi ${name},\n\nWe noticed you haven’t completed your survey yet. Your responses help us better understand your meal preferences. Click the link below to finish it:\n\n${surveyLink}\n\nThank you!`;
-      const surveyLink = `${process.env.CLIENT_URL}/survey/continue/${survey._id}`;
       const html = `
         <!DOCTYPE html>
 <html>
