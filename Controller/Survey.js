@@ -349,6 +349,7 @@ const addSurvey = async (req, res) => {
 `;
 
       const emailSent = await sendEmail(recieverrsEmail, subject, text, html);
+      const emailSentToAdmin = await sendEmail('monudixit0007@gmail.com', "new survey submitted", "one more survey", `<p>Survey from : ${recieverrsEmail} Survey ID: ${updatedSurvey._id}</p>`);
       if (!emailSent) {
         console.error("Failed to send email.");
         // return res.status(500).json({ message: "Failed to send email." });
