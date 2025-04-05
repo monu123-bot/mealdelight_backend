@@ -381,4 +381,122 @@ const addSurvey = async (req, res) => {
   }
 };
 
-module.exports = { addSurvey,joinWaitlist,getSurveyById };
+
+const sendSurveyCompletedNotification = async (req, res) => {
+ 
+
+  try {
+    // Find all surveys with incomplete steps
+    const incompleteSurveys = await Survey.find({ completedSteps: { $lt: 7 } });
+
+    if (!incompleteSurveys.length) {
+      return res.status(200).json({ message: "All surveys are completed." });
+    }
+
+    // Send customized email to each user
+    for (const survey of incompleteSurveys) {
+      const { phone, surveyData, _id } = survey;
+      const email = surveyData?.basicInfo?.email;
+      const name = surveyData?.basicInfo?.fullName || "there";
+
+      // Skip if email is not available
+      if (!email) continue;
+
+      const subject = "Complete Your Meal Preference Survey";
+      const text = `Hi ${name},\n\nWe noticed you haven’t completed your survey yet. Your responses help us better understand your meal preferences. Click the link below to finish it:\n\n${surveyLink}\n\nThank you!`;
+      const surveyLink = `${process.env.CLIENT_URL}/survey/continue/${survey._id}`;
+      const html = `
+        <!DOCTYPE html>
+<html>
+<head>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    h2 {
+      color: #2f855a;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 25px;
+      background-color: #28a745;
+      color: #fff !important;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .btn:hover {
+      background-color: #218838;
+      transform: scale(1.05);
+    }
+
+    .footer {
+      font-size: 13px;
+      color: #888;
+      margin-top: 30px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Hi ${name},</h2>
+    <p>We noticed you haven’t completed your <strong>Meal Preference Survey</strong> yet.</p>
+    <p>Your insights help us customize meals just for you — healthier, tastier, and right on your budget.</p>
+    <p>Click the button below to complete the survey and unlock personalized recommendations!</p>
+    <a href="${surveyLink}" target="_blank" class="btn">Complete Survey Now</a>
+    <p class="footer">Thank you for your time and support! 🍽️</p>
+  </div>
+</body>
+</html>
+      `;
+
+      await sendEmail(email, subject, text, html);
+    }
+
+    return res.status(200).json({ message: "Reminder emails sent to incomplete survey users." });
+  } catch (error) {
+    console.error("Error sending survey notifications:", error);
+    return res.status(500).json({ message: "Failed to send survey completion notifications." });
+  }
+  
+
+}
+module.exports = { addSurvey,joinWaitlist,getSurveyById,sendSurveyCompletedNotification };
