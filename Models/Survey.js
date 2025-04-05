@@ -11,10 +11,12 @@ const surveySchema = new mongoose.Schema({
       gender: String,
       email: String,
       phone: String,
+      timeTaken:Number
     },
     location: {
       hometownZip: String,
       currentCityZip: String,
+      timeTaken:Number
     },
     currentFoodDetails: {
       mealManagement: [String],
@@ -23,31 +25,37 @@ const surveySchema = new mongoose.Schema({
       mealServiceSubscribed: String,
       mealServiceName: String,
       otherMealProblem: String,
+      timeTaken:Number
     },
     mealPreferences: {
       foodType: [String],
       hygiene: String,
       spendPerMeal: String,
+      timeTaken:Number
     },
     workHabitats: {
       mealTimes: mongoose.Schema.Types.Mixed,
       occupation: String,
       dailyActivity: String,
       foodOrdering: String,
+      timeTaken:Number
     },
     budget: {
       incomeRange: String,
       premiumServices: String,
       mealBudget: String,
+      timeTaken:Number
     },
     customizations: {
       chooseMealService: [String],
       mealPlansFor: [String],
       appInterest: String,
       recommendMealService: String,
+      timeTaken:Number
     },
     recommendations: {
       suggestions: String,
+      timeTaken:Number
     },
   },
 }, { timestamps: true });

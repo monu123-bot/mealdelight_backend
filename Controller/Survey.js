@@ -73,7 +73,7 @@ const addSurvey = async (req, res) => {
     if (step == 1) {
       const {  step, basicInfo} = req.body;
       const phone = basicInfo.phone;
-      
+      console.log(basicInfo)
       // Check if phone number already exists
       const existingSurvey = await Survey.findOne({ phone });
       if (existingSurvey) {
