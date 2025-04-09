@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async (receiverEmail, subject, text, html) => {
+const sendEmail = async (receiverEmail, subject, text, html,senderemail,senderKey) => {
   console.log('inside send email', receiverEmail);
 
   try {
@@ -11,8 +11,8 @@ const sendEmail = async (receiverEmail, subject, text, html) => {
       port: 587,
       secure: false, // use SSL
       auth: {
-        user: 'monudixit0007@gmail.com',
-        pass: process.env.EMAILSMTPGOOGLEKEY,
+        user: senderemail,
+        pass: senderKey,
       },
     });
 

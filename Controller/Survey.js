@@ -97,61 +97,59 @@ const addSurvey = async (req, res) => {
       const subject = "Survey Started Successfully";
       const text = "Thankyou";
       const html = `
-      
       <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Survey Started</title>
-</head>
-<body style="margin:0; padding:0; font-family:Arial, sans-serif; background-color:#f9f9f9; color:#333;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:auto; background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); overflow:hidden;">
-    <tr>
-      <td style="padding: 20px; text-align: center; background-color: #fef6e4;">
-        <h1 style="color:#ff914d;">🎉 Survey Started!</h1>
-        <p style="font-size:16px;">Thank you for taking the time to share your thoughts with <strong>Meal Delight</strong>!</p>
-      </td>
-    </tr>
-
-    <tr>
-      <td style="padding: 10px 20px; text-align:center;">
-        <!-- Lottie animation embedded -->
-        <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-        <lottie-player 
-          src="https://assets7.lottiefiles.com/packages/lf20_sFGL7W.json"  
-          background="transparent"  
-          speed="1"  
-          style="width: 250px; height: 250px; margin: 0 auto;"  
-          loop  
-          autoplay>
-        </lottie-player>
-      </td>
-    </tr>
-
-    <tr>
-      <td style="padding: 20px;">
-        <p style="font-size:16px;">Your <strong>Survey ID:</strong> <span style="color:#ff914d;"><strong>${savedSurvey._id}</strong></span></p>
-        <p style="font-size:16px;">We appreciate your thoghts, Complete the survey to get special discount coupon</p>
-        <div style="text-align:center; margin-top: 20px;">
-          <a href="${COUPON_LINK}" style="padding:12px 25px; background-color:#ff914d; color:#fff; text-decoration:none; border-radius:5px; font-weight:bold;">🎁 Complete your survey</a>
-        </div>
-      </td>
-    </tr>
-
-    <tr>
-      <td style="padding: 20px; background-color: #fef6e4; text-align: center;">
-        <p style="margin: 0; font-size: 14px;">With gratitude,</p>
-        <h3 style="margin: 5px 0 0; color:#ff914d;">Team Meal Delight 🥗</h3>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Survey Initiated</title>
+      </head>
+      <body style="margin:0; padding:0; font-family:Arial, sans-serif; background-color:#f5f7fa; color:#333333;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:auto; background:#ffffff; border-radius:6px; overflow:hidden;">
+          <tr>
+            <td style="padding:25px 20px; text-align:center; background-color:#fdf6ed;">
+              <h1 style="color:#d47d35; margin:0; font-size:24px;">Survey Initiated</h1>
+              <p style="font-size:16px; margin-top:10px;">Thank you for sharing your thoughts with Meal Delight</p>
+            </td>
+          </tr>
       
+          <tr>
+            <td style="padding:25px 30px;">
+              <p style="font-size:16px; line-height:1.5; margin:10px 0;">Survey Reference: <span style="color:#d47d35;">${savedSurvey._id}</span></p>
+              <p style="font-size:16px; line-height:1.5; margin:15px 0;">We value your input and appreciate you taking the time to start this survey. Complete all sections to receive your special discount code.</p>
+              
+              <p style="font-size:16px; line-height:1.5; margin:15px 0;">Your feedback helps us improve our meal offerings and provide better service.</p>
+              
+              <div style="text-align:center; margin:25px 0 15px 0;">
+                <a href="${COUPON_LINK}" style="background-color:#d47d35; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:4px; font-weight:bold; display:inline-block; font-size:16px;">Continue Your Survey</a>
+              </div>
+              
+              <p style="font-size:14px; line-height:1.5; margin:20px 0 10px; color:#666666;">
+                You can return to complete your survey at any time within the next 7 days.
+              </p>
+            </td>
+          </tr>
       
+           <!-- Footer -->
+    <tr>
+      <td style="background-color:#f7f7f7; padding:20px; text-align:center; border-top:1px solid #eeeeee;">
+        <p style="margin:0 0 10px; font-size:14px; color:#666666;">Thank you for your participation,</p>
+        <p style="margin:0; font-size:14px; color:#2e8b57;">Meal Delight Team</p>
+        <p style="margin:15px 0 0; font-size:12px; color:#999999;">
+          Meal Delight Inc., Sec 28 Gurugram, Haryana, India<br>
+          <a href="https://www.themealdelight.in" style="color:#999999;">www.themealdelight.in</a><br>
+        </p>
+        <p style="margin:5px 0 0; font-size:12px; color:#999999;">
+          <a href="mailto:survey@themealdelight.in?subject=unsubscribe" style="color:#999999;">Unsubscribe</a> | 
+          <a href="{{PRIVACY_POLICY_LINK}}" style="color:#999999;">Privacy Policy</a>
+        </p>
+      </td>
+    </tr>
+        </table>
+      </body>
+      </html>
       `;
-      const emailSent = await sendEmail(recieverrsEmail, subject, text, html);
+      const emailSent = await sendEmail(recieverrsEmail, subject, text, html,process.env.SURVEY_EMAIL,process.env.SURVEY_EMAILSMTPGOOGLEKEY);
       if (!emailSent) {
         console.error("Failed to send email.");
         // return res.status(500).json({ message: "Failed to send email." });
@@ -301,46 +299,53 @@ const addSurvey = async (req, res) => {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Survey Completed</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survey Confirmation</title>
 </head>
-<body style="margin:0; padding:0; background-color:#f5f7fa; font-family:Arial, sans-serif; color:#333;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:auto; background-color:#ffffff; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.08); overflow:hidden;">
+<body style="margin:0; padding:0; background-color:#f5f7fa; font-family:Arial, sans-serif; color:#333333;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:auto; background-color:#ffffff; border-radius:6px; overflow:hidden;">
     
     <!-- Header -->
     <tr>
-      <td style="background-color:#eafbea; padding: 30px 20px; text-align: center;">
-        <h1 style="color:#28a745; margin: 0; font-size: 26px;">✅ Survey Completed!</h1>
-        <p style="font-size:16px; margin-top: 10px;">Thanks for sharing your valuable feedback with <strong>Meal Delight</strong>!</p>
+      <td style="background-color:#f0f7f0; padding:25px 20px; text-align:center;">
+        <h1 style="color:#2e8b57; margin:0; font-size:24px;">Survey Confirmation</h1>
+        <p style="font-size:16px; margin-top:10px;">Thank you for completing your feedback with Meal Delight</p>
       </td>
     </tr>
 
-    <!-- Animation Image -->
-   
-
     <!-- Body Content -->
     <tr>
-      <td style="padding: 20px 30px;">
-        <p style="font-size:16px; margin: 10px 0;">🎉 <strong>Survey ID:</strong> <span style="color:#28a745;">${updatedSurvey._id}</span></p>
-        <p style="font-size:16px; margin: 10px 0;">Your feedback helps us improve and serve you better.</p>
-        <p style="font-size:16px; margin: 20px 0 10px;">As a token of appreciation, here’s your special discount code:</p>
+      <td style="padding:25px 30px;">
+        <p style="font-size:16px; line-height:1.5; margin:10px 0;">Survey Reference: <span style="color:#2e8b57;">${updatedSurvey._id}</span></p>
+        <p style="font-size:16px; line-height:1.5; margin:15px 0;">We appreciate your input which helps us improve our service quality.</p>
+        <p style="font-size:16px; line-height:1.5; margin:15px 0;">Please find your appreciation discount code below:</p>
         
-        <div style="background-color: #f0fdf4; padding: 16px; text-align: center; border-radius: 6px; font-size: 18px; font-weight: bold; color: #28a745; border: 1px dashed #28a745;">
+        <div style="background-color:#f7fbf7; padding:15px; text-align:center; border-radius:5px; font-size:18px; font-weight:bold; color:#2e8b57; border:1px solid #dee2e6; margin:20px 0;">
           ${survey.discountCode}
         </div>
 
-        <div style="text-align:center; margin-top: 25px;">
-          <a href="{{COUPON_LINK}}" style="background-color:#28a745; color:#ffffff; text-decoration:none; padding:12px 25px; border-radius:5px; font-weight:bold; display:inline-block; font-size:16px;">🎁 Redeem Your Coupon</a>
-        </div>
+        
+        
+        <p style="font-size:14px; line-height:1.5; margin:20px 0 10px; color:#666666;">
+          This discount code is valid for 30 days from today. Please contact us if you have any questions.
+        </p>
       </td>
     </tr>
 
     <!-- Footer -->
     <tr>
-      <td style="background-color: #eafbea; padding: 20px; text-align: center;">
-        <p style="margin: 0; font-size: 14px;">With heartfelt thanks,</p>
-        <h3 style="margin: 5px 0 0; color:#28a745;">Team Meal Delight 🥗</h3>
+      <td style="background-color:#f7f7f7; padding:20px; text-align:center; border-top:1px solid #eeeeee;">
+        <p style="margin:0 0 10px; font-size:14px; color:#666666;">Thank you for your participation,</p>
+        <p style="margin:0; font-size:14px; color:#2e8b57;">Meal Delight Team</p>
+        <p style="margin:15px 0 0; font-size:12px; color:#999999;">
+          Meal Delight Inc., Sec 28 Gurugram, Haryana, India<br>
+          <a href="https://www.themealdelight.in" style="color:#999999;">www.themealdelight.in</a><br>
+        </p>
+        <p style="margin:5px 0 0; font-size:12px; color:#999999;">
+          <a href="mailto:survey@themealdelight.in?subject=unsubscribe" style="color:#999999;">Unsubscribe</a> | 
+          <a href="{{PRIVACY_POLICY_LINK}}" style="color:#999999;">Privacy Policy</a>
+        </p>
       </td>
     </tr>
   </table>
@@ -348,8 +353,8 @@ const addSurvey = async (req, res) => {
 </html>
 `;
 
-      const emailSent = await sendEmail(recieverrsEmail, subject, text, html);
-      const emailSentToAdmin = await sendEmail('monudixit0007@gmail.com', "new survey submitted", "one more survey", `<p>Survey from : ${recieverrsEmail} Survey ID: ${updatedSurvey._id}</p>`);
+      const emailSent = await sendEmail(recieverrsEmail, subject, text, html,process.env.CEO_EMAIL,process.env.CEO_EMAILSMTPGOOGLEKEY);
+      const emailSentToAdmin = await sendEmail('monudixit0007@gmail.com', "new survey submitted", "one more survey", `<p>Survey from : ${recieverrsEmail} Survey ID: ${updatedSurvey._id}</p>`,process.env.SURVEY_EMAIL,process.env.SURVEY_EMAILSMTPGOOGLEKEY);
       if (!emailSent) {
         console.error("Failed to send email.");
         // return res.status(500).json({ message: "Failed to send email." });
