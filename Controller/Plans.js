@@ -8,6 +8,7 @@ const PlansTransaction = require('../Models/PlansTransaction');
 // const Transaction = require('../Models/Transaction'); // Adjust path as necessary
 const mongoose = require('mongoose');
 const DeliveryAddress = require('../Models/DeliveryAddress');
+const Menu = require('../Models/Menu');
 const getPlans = async (req, res) => {
   try {
       const page = parseInt(req.query.page) || 1; // Page number from query parameter, default to 1
@@ -344,4 +345,20 @@ const get5Plans = async (req, res) => {
       res.status(500).json({ message: 'Failed to fetch paused slots.' });
     }
   };
-  module.exports = { getPlans ,Subscribe,fetchMyPlans,get5Plans,getPlanDetails,pausePlan,getPausedSlots};
+
+  const GetMenu = async (req, res) => {
+
+    try {
+      const { id } = req.query;// Get menu ID from query parameter
+      console.log(id)
+      const menu = await Menu.findOne({_id:id}); // Fetch menu by ID
+      if (!menu) {
+        return res.status(404).json({ message: 'Menu not found' });
+      }
+      res.status(200).json(menu);
+    } catch (error) {
+      console.error('Error fetching menu:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+  module.exports = { getPlans ,Subscribe,fetchMyPlans,get5Plans,getPlanDetails,pausePlan,getPausedSlots,GetMenu};

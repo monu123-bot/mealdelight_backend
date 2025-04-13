@@ -27,8 +27,9 @@ const planSchema = new mongoose.Schema({
     default:false
     },
     menu:{
-        type:String,
-        required:true
+         type: mongoose.Schema.Types.ObjectId,
+                ref: 'WeeklyMenu', // Referencing the 'users' collection
+                required: true
     },
     isHome:{
         type:Boolean,

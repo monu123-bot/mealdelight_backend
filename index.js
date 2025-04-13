@@ -54,9 +54,9 @@ app.use(
       // Get data from the request body
       const { name, price, discount, menu,period ,isCoupon,thumbnail} = {
         name: 'North Indian Plan',
-        price: 4000,
-        discount: 10,
-        menu: 'https://www.canva.com/design/DAGS53cj2zw/VID2rEIuW4gf8iMphy8RGQ/view',
+        price: 5000,
+        discount: 15,
+        menu: '67fb714191ce67838a208bb9',
         period:30,
         isCoupon:true,
         thumbnail:'https://www.eatingwell.com/thmb/6ppa_TjBBdbsguYwOUL99hk2qWc=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/EW-Meal-Plans-Mediterranean-Day-05-3x2-9aa76ee89adc4c56a802a8bc3a7141c8.jpg'
@@ -182,6 +182,8 @@ const DarkKitchenRouter = require('./Routes/DarkStores');
 const DeliveryStatus=require('./Routes/DeliveryStatus')
 const BlogRouter = require('./Routes/Blogs')
 const SurveyRouter = require('./Routes/Survey')
+const AdminRouter = require('./Routes/Admin');
+const { default: mongoose } = require("mongoose");
 app.use("/user", UserRouter);
 app.use("/payment",PaymentRouter)
 app.use("/blog", BlogRouter);
@@ -191,6 +193,7 @@ app.use("/phone",PhoneRouter)
 app.use("/darkkitchen",DarkKitchenRouter)
 app.use('/Delivery',DeliveryStatus)
 app.use('/survey',SurveyRouter)
+app.use('/admin',AdminRouter)
 app.listen(PORT, () => {
   console.log('Server is running on port:', PORT);
 });
