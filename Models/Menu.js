@@ -18,6 +18,14 @@ const MenuSchema = new mongoose.Schema({
   thursday: daySchema,
   friday: daySchema,
   saturday: daySchema,
+  name: {
+    type: String,
+    required: true,
+  },
+  description:{
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

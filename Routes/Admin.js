@@ -1,6 +1,7 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const {AddMenu} = require('../Controller/Admin')
+const {AddMenu,Login,Register,GetMenu,addPlan} = require('../Controller/Admin')
+const { adminAuth } = require('../Middleware/adminAuth')
 // const { userAuth } = require('../Middleware/userAuth')
 
 // const {} = require('../middleware/Auth')
@@ -9,4 +10,8 @@ const {AddMenu} = require('../Controller/Admin')
 const AdminRouter = express.Router()
 const jsonparser = bodyParser.json()
 AdminRouter.post("/addmenu",AddMenu)
+AdminRouter.post("/login",Login)
+AdminRouter.post("/register",Register)
+AdminRouter.get("/getMenu",adminAuth,GetMenu)
+AdminRouter.post("/addplan",adminAuth,addPlan)
 module.exports = AdminRouter

@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const Coupon = require("./Models/Coupon");
 const secretKeyJWT = "asdasdsadasdasdasdsa";
-const planSchema = require('./Models/Plans')
+
 const DarkKitchen = require('./Models/DarkKitchen')
 // Database Connection
 const db = require('./config/db');
@@ -49,45 +49,6 @@ app.use(
   app.use(cookieParser());
 
 
-  const addPlan = async () => {
-    try {
-      // Get data from the request body
-      const { name, price, discount, menu,period ,isCoupon,thumbnail} = {
-        name: 'North Indian Plan',
-        price: 5000,
-        discount: 15,
-        menu: '67fb714191ce67838a208bb9',
-        period:30,
-        isCoupon:true,
-        thumbnail:'https://www.eatingwell.com/thmb/6ppa_TjBBdbsguYwOUL99hk2qWc=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/EW-Meal-Plans-Mediterranean-Day-05-3x2-9aa76ee89adc4c56a802a8bc3a7141c8.jpg'
-      };
-  
-      // Validation check for required fields
-      if (!name || !price || !menu) {
-        return res.status(400).json({ message: 'Name, price, and menu are required.' });
-      }
-  
-      // Create a new plan
-      const newPlan = new planSchema({                          
-        name,
-        price,
-        discount: discount || 0, // Default discount to 0 if not provided
-        menu,
-        period,
-        isCoupon,
-        thumbnail
-      });
-  
-      // Save the plan to the database
-      const savedPlan = await newPlan.save();
-      console.log('plan added')
-      // Send response
-      
-    } catch (error) {
-      console.error('Error adding plan:', error);
-      
-    }
-  };
   
 // addPlan()
 
@@ -196,6 +157,7 @@ app.use('/Delivery',DeliveryStatus)
 app.use('/survey',SurveyRouter)
 app.use('/admin',AdminRouter)
 app.use('/tapi',ThirdPartyRouter)
+
 app.listen(PORT, () => {
   console.log('Server is running on port:', PORT);
 });
