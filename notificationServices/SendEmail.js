@@ -18,7 +18,7 @@ const sendEmail = async (receiverEmail, subject, text, html,senderemail,senderKe
 
     // Configure the mail options object
     const mailOptions = {
-      from: process.env.EMAIL,
+      from: senderemail,
       to: receiverEmail,
       subject: subject,
       text: text,

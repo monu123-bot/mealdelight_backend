@@ -6,6 +6,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const planSchema = require('../Models/Plans')
 const WeeklyMenu = require('../Models/Menu');
+const PaymentOrder = require('../Models/PaymentOrder');
+const sendEmail = require('../notificationServices/SendEmail');
+const mongoose = require('mongoose');
+const User = require('../Models/User');
 const AddMenu = async (req, res) => {
    
   try {
@@ -440,4 +444,211 @@ const deleteWeeklyMenu = async (req, res) => {
   }
 };
 
-module.exports = {AddMenu,Login,Register,GetMenu,addPlan,getPlans,EditPlan,DeletePlan,getWeeklyMenus,editWeeklyMenu,deleteWeeklyMenu};
+
+const GetWalletTransactions = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    // Build filter object
+    const filter = { order_status: 'FAILED' }; // We only want failed transactions
+    
+    // Apply claim status filter if provided
+    if (req.query.claimStatus) {
+      filter.claim_status = req.query.claimStatus;
+    }
+    
+    // Apply date filters if provided
+    if (req.query.startDate || req.query.endDate) {
+      filter.createdAt = {};
+      
+      if (req.query.startDate) {
+        filter.createdAt.$gte = new Date(req.query.startDate);
+      }
+      
+      if (req.query.endDate) {
+        // Set end date to the end of the day
+        const endDate = new Date(req.query.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = endDate;
+      }
+    }
+    
+    // Get total count of documents matching the filter
+    const totalCount = await PaymentOrder.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    // Fetch transactions with pagination
+    const transactions = await PaymentOrder.find(filter)
+      .populate('customer_id', 'firstName email phone') // Populate customer details
+      .sort({ createdAt: -1 }) // Sort by latest first
+      .skip(skip)
+      .limit(limit);
+    
+    res.status(200).json({
+      success: true,
+      transactions,
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit
+    });
+    
+  } catch (error) {
+    console.error('Error fetching wallet transactions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch wallet transactions',
+      error: error.message
+    });
+  }
+};
+
+
+const verifyAdminPassword = async (adminPassword,adminId) => {
+  
+  console.log(adminId)
+  const admin = await Admin.findOne({ _id: new mongoose.Types.ObjectId(adminId) } );
+console.log(admin)
+  if (!admin) {
+   return false
+  }
+
+  // Check password
+  const isMatch = await bcrypt.compare(adminPassword, admin.password);
+  console.log(isMatch)
+  if (!isMatch) {
+    return {status:false,email:null}; 
+  }
+  return {status:true,email:admin.email}; 
+
+
+  }
+
+
+
+  const UpdateClaimStatus = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      console.log(req.body);
+  
+      const adminId = req.adminId;
+      const { transactionId, action, comment, adminPassword } = req.body;
+  
+      // Verify admin credentials
+      const isAdmin = await verifyAdminPassword(adminPassword, adminId);
+      if (!isAdmin.status) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(403).json({
+          success: false,
+          message: 'Unauthorized action',
+        });
+      }
+      const adminEmail = isAdmin.email;
+  
+      // Validate action
+      const validStatuses = ['Approve', 'Reject'];
+      if (!validStatuses.includes(action)) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid claim status',
+        });
+      }
+  
+      // Find the transaction
+      const transaction = await PaymentOrder.findOne(
+        { _id: new mongoose.Types.ObjectId(transactionId) },
+        null,
+        { session }
+      );
+      if (transaction.isClaimApproved) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({
+          success: false,
+          message: 'Claim already approved',
+        });
+      }
+
+      if (!transaction) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({
+          success: false,
+          message: 'Transaction not found',
+        });
+      }
+  
+      const customer = await User.findOne(
+        { _id: new mongoose.Types.ObjectId(transaction.customer_id) },
+        null,
+        { session }
+      );
+      if (!customer) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({
+          success: false,
+          message: 'Customer not found',
+        });
+      }
+  
+      const amount = transaction.order_amount;
+  
+      // Update claim status
+      if (action === 'Approve') {
+        transaction.claim_status = 'Payment completed';
+      } else if (action === 'Reject') {
+        transaction.claim_status = 'Payment rejected';
+      }
+  
+      customer.walletbalance += amount;
+  
+      transaction.isClaimed = false; // Mark as claimed
+      transaction.order_status = 'SUCCESS';
+      transaction.isClaimApproved = true; // Mark as claim approved
+      // Save both documents inside the transaction
+      await customer.save({ session });
+      await transaction.save({ session });
+  
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+  
+      // After committing transaction, send email (email failure shouldn't affect database consistency)
+      sendEmail(
+        customer.email,
+        'Claim Status Update',
+        `Your claim status has been updated to: ${action}. Comment: ${comment}`,
+        '',
+        process.env.CEO_EMAIL,
+        process.env.CEO_EMAILSMTPGOOGLEKEY
+      );
+  
+      res.status(200).json({
+        success: true,
+        message: 'Claim status updated successfully',
+        transaction,
+      });
+  
+    } catch (error) {
+      console.error('Error updating claim status:', error);
+  
+      // Rollback any changes made in the transaction
+      await session.abortTransaction();
+      session.endSession();
+  
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update claim status',
+        error: error.message,
+      });
+    }
+  };
+module.exports = {AddMenu,Login,Register,GetMenu,addPlan,getPlans,EditPlan,DeletePlan,getWeeklyMenus,editWeeklyMenu,deleteWeeklyMenu,GetWalletTransactions,UpdateClaimStatus};

@@ -20,11 +20,13 @@ exports.adminAuth = (req, res, next) => {
       }
       else{
       
-        req.user = data.user
-        console.log('auth user is ',req.user)
-        // console.log("verified is ",data)
+        req.adminId = data.id
         
-        return next()
+        console.log("verified is ",data)
+        if (data.role=='admin'){
+          return next()
+        }
+        return res.status(401).json({msg:"error in verifying token"})
       }
     })
     

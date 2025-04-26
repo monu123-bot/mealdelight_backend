@@ -53,6 +53,10 @@ const paymentOrderSchema = new mongoose.Schema({
     isClaimed:{
         type:Boolean,
         default:false
+    },
+    isClaimApproved:{
+        type:Boolean,
+        default:false
     }
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
