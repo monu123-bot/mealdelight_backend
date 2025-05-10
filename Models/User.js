@@ -84,6 +84,11 @@ const UserSchema = mongoose.Schema({
      type:mongoose.Schema.Types.ObjectId,
      required:true
       }],
+      status:{
+        type:String,
+        enum:['active','inactive','blocked','deleted','pending'],
+        default:'active'
+      },
 
       
     createdAt:{

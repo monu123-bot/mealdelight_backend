@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const {AddMenu,Login,Register,GetMenu,addPlan,getPlans, DeletePlan, EditPlan,getWeeklyMenus,editWeeklyMenu,deleteWeeklyMenu,GetWalletTransactions,UpdateClaimStatus} = require('../Controller/Admin')
+const {AddMenu,Login,Register,GetMenu,addPlan,getPlans, DeletePlan, EditPlan,getWeeklyMenus,editWeeklyMenu,deleteWeeklyMenu,GetWalletTransactions,UpdateClaimStatus,getUsers,getTransactionOrders,getUserActivityHistory} = require('../Controller/Admin')
 const { adminAuth } = require('../Middleware/adminAuth')
 // const { userAuth } = require('../Middleware/userAuth')
 
@@ -22,4 +22,9 @@ AdminRouter.put('/editWeeklyMenu/:id', adminAuth, editWeeklyMenu);
 AdminRouter.delete('/deleteWeeklyMenu/:id', adminAuth, deleteWeeklyMenu);
 AdminRouter.get("/wallettransactions",adminAuth,GetWalletTransactions);
 AdminRouter.post('/updateClaimStatus', adminAuth, UpdateClaimStatus);
+AdminRouter.post('/getUsers', adminAuth, getUsers);
+AdminRouter.post('/getTransactionOrders', adminAuth, getTransactionOrders);
+AdminRouter.get('/getCustomerActivity', adminAuth, getUserActivityHistory);
+// AdminRouter.post('/getTransactionOrders', adminAuth, getTransactionOrders);
+
 module.exports = AdminRouter

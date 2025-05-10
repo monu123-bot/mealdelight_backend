@@ -10,6 +10,8 @@ const PaymentOrder = require('../Models/PaymentOrder');
 const sendEmail = require('../notificationServices/SendEmail');
 const mongoose = require('mongoose');
 const User = require('../Models/User');
+const DeliveryAddress = require('../Models/DeliveryAddress');
+const PlansTransaction = require('../Models/PlansTransaction');
 const AddMenu = async (req, res) => {
    
   try {
@@ -651,4 +653,355 @@ console.log(admin)
       });
     }
   };
-module.exports = {AddMenu,Login,Register,GetMenu,addPlan,getPlans,EditPlan,DeletePlan,getWeeklyMenus,editWeeklyMenu,deleteWeeklyMenu,GetWalletTransactions,UpdateClaimStatus};
+
+
+  const getUsers = async (req, res) => {
+    try {
+      const page = parseInt(req.body.page) || 1;
+      const limit = parseInt(req.body.limit) || 10;
+      const skip = (page - 1) * limit;
+  
+      const filter = {};
+  
+      if (req.body.by !== '') {
+        const searchTerm = req.body.term.trim();
+        const regex = new RegExp(searchTerm, 'i'); // Case-insensitive regex
+      
+        switch (req.body.by) {
+          case 'name':
+            // Correctly handle full name search
+            filter.$or = [
+              { firstName: regex },
+              { lastName: regex },
+              // The following approach won't work properly in MongoDB
+              // { $expr: { $regexMatch: { input: { $concat: ["$firstName", " ", "$lastName"] }, regex: searchTerm, options: "i" } } }
+            ];
+            
+            // For full name search, we need to use aggregation or split the search term
+            // Check if the search term contains a space (possible first+last name)
+            if (searchTerm.includes(' ')) {
+              const [firstPart, ...restParts] = searchTerm.split(' ');
+              const lastPart = restParts.join(' ');
+              
+              // Add a condition that matches firstName with first part AND lastName with last part
+              filter.$or.push({
+                $and: [
+                  { firstName: new RegExp(firstPart, 'i') },
+                  { lastName: new RegExp(lastPart, 'i') }
+                ]
+              });
+            }
+            break;
+          case 'email':
+            filter.email = regex;
+            break;
+          case 'phone':
+            filter.phone = regex;
+            break;
+          default:
+            // Search across multiple fields
+            filter.$or = [
+              { firstName: regex },
+              { lastName: regex },
+              { email: regex },
+              { phone: regex }
+            ];
+            break;
+        }
+      }
+  console.log(filter)
+      const users = await User.find(filter)
+        .select('firstName lastName email phone createdAt role')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+  
+      const total = await User.countDocuments(filter);
+  
+      const totalPages = Math.ceil(total / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+  
+      const formattedUsers = users.map(user => ({
+        ...user,
+        fullName: `${user.firstName} ${user.lastName}`.trim(),
+        joinDate: new Date(user.createdAt).toLocaleDateString('en-US'),
+        id: user._id
+      }));
+  
+      res.status(200).json({
+        success: true,
+        data: formattedUsers,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage,
+          hasPrevPage
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch users',
+        error: error.message
+      });
+    }
+  };
+
+
+  const getTransactionOrders = async (req, res) => {
+    try {
+      const page = parseInt(req.body.page) || 1;
+      const limit = parseInt(req.body.limit) || 10;
+      const skip = (page - 1) * limit;
+      
+      // Build search filter
+      const filter = {};
+      
+      if (req.body.search && req.body.searchBy) {
+        const searchTerm = req.body.search.trim();
+        
+        switch (req.body.searchBy) {
+          case 'orderId':
+            // Case-insensitive search for order_id
+            filter.order_id = new RegExp(searchTerm, 'i');
+            break;
+            
+          case 'customerId':
+            // If the search term is a valid ObjectId, use it directly
+            if (mongoose.isValidObjectId(searchTerm)) {
+              filter.customer_id =new mongoose.Types.ObjectId(searchTerm);
+            } else {
+              // Return empty result if invalid ObjectId for customer search
+              return res.status(200).json({
+                success: true,
+                data: [],
+                pagination: {
+                  page,
+                  limit,
+                  total: 0,
+                  totalPages: 0,
+                  hasNextPage: false,
+                  hasPrevPage: false
+                }
+              });
+            }
+            break;
+            
+          default:
+            // If no specific search field is provided or invalid field
+            // Search in both fields if the term might be an ObjectId
+            if (mongoose.isValidObjectId(searchTerm)) {
+              filter.$or = [
+                { order_id: new RegExp(searchTerm, 'i') },
+                { customer_id:new mongoose.Types.ObjectId(searchTerm) }
+              ];
+            } else {
+              // Just search by order_id if not a valid ObjectId
+              filter.order_id = new RegExp(searchTerm, 'i');
+            }
+            break;
+        }
+      }
+  
+      // Perform the find operation with population of customer details
+      const transactions = await PaymentOrder.find(filter)
+        .populate('customer_id', 'firstName lastName email phone')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+  
+      // Get total count for pagination
+      const total = await PaymentOrder.countDocuments(filter);
+      
+      // Calculate pagination details
+      const totalPages = Math.ceil(total / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+  
+      // Format transactions for response
+      const formattedTransactions = transactions.map(transaction => ({
+        ...transaction,
+        customerName: transaction.customer_id ? 
+          `${transaction.customer_id.firstName} ${transaction.customer_id.lastName}`.trim() : 
+          'Unknown Customer',
+        customerEmail: transaction.customer_id ? transaction.customer_id.email : '',
+        customerPhone: transaction.customer_id ? transaction.customer_id.phone : '',
+        transactionDate: new Date(transaction.createdAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        // Keep the original customer_id for reference but also include formatted id
+        customerId: transaction.customer_id ? transaction.customer_id._id : null
+      }));
+  
+      // Send successful response
+      res.status(200).json({
+        success: true,
+        data: formattedTransactions,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage,
+          hasPrevPage
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch transactions',
+        error: error.message
+      });
+    }
+  };
+
+
+  const getUserActivityHistory = async (req, res) => {
+    try {
+      const userId = req.query.id;
+  console.log(userId)
+      // Validate ObjectId
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid user ID format'
+        });
+      }
+  
+      // Get user details
+      const user = await User.findById(userId).lean();
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+  
+      // Format basic user info
+      const userInfo = {
+        _id: user._id,
+        name: `${user.firstName} ${user.lastName}`.trim(),
+        email: user.email,
+        phone: user.phone,
+        gender: user.gender || 'Not specified',
+        dob: user.dob ? new Date(user.dob).toLocaleDateString() : 'Not specified',
+        status: user.status,
+        walletBalance: user.walletbalance,
+        country: user.country,
+        registrationDate: new Date(user.createdAt).toISOString(),
+        image: user.image
+      };
+  
+      // Get all delivery addresses
+      const addresses = await DeliveryAddress.find({ user_id: userId }).lean();
+  
+      // Get all payment orders
+      const paymentOrders = await PaymentOrder.find({ customer_id: userId }).lean();
+      
+      // Get all plan transactions with populated plan details
+      const planTransactions = await PlansTransaction.find({ user_id: userId })
+        .populate('plan_id', 'name description price duration')
+        .populate('address_id')
+        .lean();
+  
+      // Combine all activities into a single timeline
+      const activities = [];
+  
+      // Add registration as first activity
+      activities.push({
+        type: 'registration',
+        date: new Date(user.createdAt),
+        timestamp: user.createdAt,
+        details: {
+          message: 'User registered',
+          email: user.email
+        }
+      });
+  
+      // Add all addresses with creation dates
+      addresses.forEach(address => {
+        activities.push({
+          type: 'address_added',
+          date: new Date(address.createdAt),
+          timestamp: address.createdAt,
+          details: {
+            address_id: address._id,
+            address: address.address,
+            receiver: address.recievers_name,
+            isDefault: address.isDefault
+          }
+        });
+      });
+  
+      // Add all payment orders
+      paymentOrders.forEach(order => {
+        activities.push({
+          type: 'payment',
+          date: new Date(order.createdAt),
+          timestamp: new Date(order.createdAt).getTime(),
+          details: {
+            order_id: order.order_id,
+            amount: order.order_amount,
+            currency: order.order_currency,
+            status: order.order_status,
+            claim_status: order.claim_status,
+            _id: order._id
+          }
+        });
+      });
+  
+      // Add all plan transactions
+      planTransactions.forEach(transaction => {
+        activities.push({
+          type: 'plan_subscription',
+          date: new Date(transaction.createdAt),
+          timestamp: new Date(transaction.createdAt).getTime(),
+          details: {
+            plan_name: transaction.plan_id?.name || 'Unknown Plan',
+            plan_price: transaction.plan_id?.price || transaction.amount,
+            amount_paid: transaction.amount,
+            expiry_date: new Date(transaction.expiringAt).toISOString(),
+            delivery_address: transaction.address_id ? 
+              `${transaction.address_id.recievers_name}, ${transaction.address_id.address}` :
+              'Address not available',
+            paused_dates: transaction.pausedDates || [],
+            _id: transaction._id
+          }
+        });
+      });
+  
+      // Sort all activities by date (newest first)
+      activities.sort((a, b) => b.timestamp - a.timestamp);
+  
+      res.status(200).json({
+        success: true,
+        data: {
+          user: userInfo,
+          addresses: addresses,
+          activities: activities
+        }
+      });
+  
+    } catch (error) {
+      console.error('Error fetching user activity history:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch user activity history',
+        error: error.message
+      });
+    }
+  };
+module.exports = {AddMenu,Login,Register,GetMenu,addPlan,getPlans,EditPlan,DeletePlan,getWeeklyMenus,editWeeklyMenu,deleteWeeklyMenu,GetWalletTransactions,UpdateClaimStatus,getUsers,getTransactionOrders,getUserActivityHistory};
