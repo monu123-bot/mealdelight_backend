@@ -9,6 +9,7 @@ const bcrypt = require('bcryptjs')
 const PaymentOrder = require('../Models/PaymentOrder');
 const PlansTransaction = require('../Models/PlansTransaction');
 const DeliveryAddress = require('../Models/DeliveryAddress');
+const OTP = require('../Models/Otp');
 
 const verifyLogin = async (req,res)=>{
 
@@ -99,6 +100,44 @@ const createUser =async (req,res) =>{
         res.status(500).json({ msg: 'Server error' });
       }
 }
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { phone, newPassword, otpId, otp } = req.body;
+    console.log('Forgot password request:', { phone, otpId, otp });
+    // Check if user exists
+    const existingUser = await User.findOne({ phone });
+    if (!existingUser) {
+      return res.status(404).json({ msg: 'User not found with this phone number' });
+    }
+
+    // Verify OTP
+    const otpRecord = await OTP.findOne({ _id: otpId, otp:otp });
+    console.log('OTP Record:', otpRecord);
+    if (!otpRecord || otpRecord.expireAt < Date.now()) {
+      return res.status(400).json({ msg: 'Invalid or expired OTP' });
+    }
+    if (!otpRecord) {
+      return res.status(400).json({ msg: 'Invalid or expired OTP' });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the password
+    existingUser.password = hashedPassword;
+    await existingUser.save();
+
+    // Optionally delete used OTP
+    await OTP.deleteOne({ _id: otpId });
+
+    res.status(200).json({ msg: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error in forgotPassword:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
 const fetchUserDetails = async (req,res)=>{
     try {
         const id = req.user; // The user ID obtained from the decoded token
@@ -340,4 +379,4 @@ const fetchAddress = async (req, res) => {
 };
 
 
-module.exports = {login,createUser,fetchUserDetails,getPaymentHistory,getSubscriptionHistory,VerifyToken,addAddress,fetchAddress}
+module.exports = {login,createUser,fetchUserDetails,getPaymentHistory,getSubscriptionHistory,VerifyToken,addAddress,fetchAddress,forgotPassword}

@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const {login,createUser,fetchUserDetails,getPaymentHistory,getSubscriptionHistory,VerifyToken,addAddress,fetchAddress} = require('../Controller/User')
+const {login,createUser,fetchUserDetails,getPaymentHistory,getSubscriptionHistory,VerifyToken,addAddress,fetchAddress,forgotPassword} = require('../Controller/User')
 const { userAuth } = require('../Middleware/userAuth')
 // const {} = require('../middleware/Auth')
 // const passport = require('passport');
@@ -15,4 +15,5 @@ UserRouter.get("/history",userAuth,getSubscriptionHistory)
 UserRouter.get("/verifyToken",userAuth,VerifyToken)
 UserRouter.post("/addAddress",userAuth,addAddress)
 UserRouter.get("/get_address",userAuth,fetchAddress)
+UserRouter.post("/forgotpassword", forgotPassword)
 module.exports = UserRouter
