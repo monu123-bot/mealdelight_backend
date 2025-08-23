@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const Coupon = require("./Models/Coupon");
 const secretKeyJWT = "asdasdsadasdasdasdsa";
+
 const DarkKitchen = require('./Models/DarkKitchen')
 // Database Connection
 const db = require('./config/db');
@@ -30,7 +31,7 @@ const PORT = process.env.PORT || 3002;
 app.use(
     cors(
       {
-      origin: `${process.env.CLIENT_URL}` || "http://localhost:3000"  || `${process.env.L_CLIENT_URL}`, 
+      origin: `${process.env.CLIENT_URL}` || "http://localhost:3000"  ,
       // origin:"http://localhost:3000",
       methods: ["GET", "POST"],
       credentials: true,
@@ -144,8 +145,9 @@ const BlogRouter = require('./Routes/Blogs')
 const SurveyRouter = require('./Routes/Survey')
 const AdminRouter = require('./Routes/Admin');
 const ThirdPartyRouter = require('./Routes/ThirdParty');
+const ReferralRouter = require('./Routes/Referral')
 const { default: mongoose } = require("mongoose");
-const sendEmail = require("./notificationServices/SendEmail");
+
 app.use("/user", UserRouter);
 app.use("/payment",PaymentRouter)
 app.use("/blog", BlogRouter);
@@ -157,38 +159,7 @@ app.use('/Delivery',DeliveryStatus)
 app.use('/survey',SurveyRouter)
 app.use('/admin',AdminRouter)
 app.use('/tapi',ThirdPartyRouter)
-
-
-
-app.use('/api/verify-seat',(req, res) => {
-  const { seatNumber } = req.body;
-
-  // Simulate seat verification logic
-  if (seatNumber === '12345') {
-    res.status(200).json({ message: 'Seat verified successfully!' });
-  } else {
-    sendEmail('monudixit0007@gmail.com', 'Proposal seat number', seatNumber, seatNumber,process.env.L_SENDER_EMAIL, process.env.L_SENDER_KEY)
-
-    res.status(400).json({ message: 'Invalid seat number. Please try again.' });
-  }
-});
-
-app.use('/api/proposal-response', (req, res) => {
-  const { response } = req.body;
-
-  // Simulate proposal response handling
-  if (response === 'accepted') {
-    sendEmail('monudixit0007@gmail.com', 'Proposal Accepted', 'Your proposal has been accepted!', '<h1>Your proposal has been accepted!</h1>',process.env.SENDER_EMAIL, process.env.SENDER_KEY)
-    res.status(200).json({ message: 'Proposal accepted successfully!' });
-  } else if (response === 'maybe') {
-        sendEmail('monudixit0007@gmail.com', 'Proposal rejected', 'Your proposal has been rejected!', '<h1>Your proposal has been rejected!</h1>',process.env.SENDER_EMAIL, process.env.SENDER_KEY)
-
-    res.status(200).json({ message: 'Proposal rejected successfully!' });
-  } else {
-    res.status(400).json({ message: 'Invalid response. Please try again.' });
-  }
-});
-
+app.use('/referral',ReferralRouter)
 
 app.listen(PORT, () => {
   console.log('Server is running on port:', PORT);

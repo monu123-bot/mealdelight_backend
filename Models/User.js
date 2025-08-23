@@ -78,7 +78,6 @@ const UserSchema = mongoose.Schema({
       address:{
         type:String,
         
-
       },
       plans:[{
      type:mongoose.Schema.Types.ObjectId,

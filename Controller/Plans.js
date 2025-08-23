@@ -9,6 +9,7 @@ const PlansTransaction = require('../Models/PlansTransaction');
 const mongoose = require('mongoose');
 const DeliveryAddress = require('../Models/DeliveryAddress');
 const Menu = require('../Models/Menu');
+const Referral = require('../Models/Referral');
 const getPlans = async (req, res) => {
   try {
       const page = parseInt(req.query.page) || 1; // Page number from query parameter, default to 1
@@ -33,81 +34,108 @@ const getPlans = async (req, res) => {
 };
 
 const Subscribe = async (req, res) => {
-  const planId = req.body.planId;
-  const couponName = req.body.couponName;
-  const addressId = req.body.addressId;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-      const currentDate = new Date();
-     console.log(currentDate)
-      // Find an active transaction for the given plan and user
-      const existingTransaction = await PlansTransaction.findOne({
-          user_id: new mongoose.Types.ObjectId(req.user),
-          plan_id:new mongoose.Types.ObjectId(planId),
-          address_id:new mongoose.Types.ObjectId(addressId),
-          expiringAt:{$gte:currentDate}
+    const { planId, couponName, addressId } = req.body;
+    const currentDate = new Date();
+
+    // ✅ Find existing transaction (with session)
+    const existingTransaction = await PlansTransaction.findOne({
+      user_id: new mongoose.Types.ObjectId(req.user),
+      plan_id: new mongoose.Types.ObjectId(planId),
+      address_id: new mongoose.Types.ObjectId(addressId),
+      expiringAt: { $gte: currentDate },
+    }).session(session);
+
+    let remainingDays = 0;
+    if (existingTransaction) {
+      const timeDiff = existingTransaction.expiringAt - currentDate;
+      remainingDays = Math.ceil(timeDiff / (24 * 60 * 60 * 1000));
+      existingTransaction.expiringAt = new Date(
+        currentDate.getTime() - 24 * 60 * 60 * 1000
+      );
+      await existingTransaction.save({ session });
+    }
+
+    // ✅ Fetch required data with session
+    const plan = await Plans.findById(planId).session(session);
+    const coupon = couponName
+      ? await Coupon.findOne({ name: couponName }).session(session)
+      : null;
+    const user1 = await User.findById(req.user).session(session);
+
+    // ✅ Price calculation
+    const priceWithDiscount =
+      plan.price - (plan.price * plan.discount) / 100;
+    const priceWithCoupon = coupon
+      ? priceWithDiscount - (priceWithDiscount * coupon.discount) / 100
+      : priceWithDiscount;
+
+    const requiredAmount = priceWithCoupon;
+
+    if (requiredAmount <= user1.walletbalance) {
+      // Deduct wallet balance
+      user1.walletbalance -= requiredAmount;
+      await user1.save({ session });
+
+      // New expiry date
+      const newExpiringAt = new Date(
+        currentDate.getTime() +
+          (plan.period + remainingDays) * 24 * 60 * 60 * 1000
+      );
+
+      // New transaction
+      const transactionData = {
+        user_id: user1._id,
+        plan_id: plan._id,
+        address_id: addressId,
+        coupon_id: coupon ? coupon._id : null,
+        amount: requiredAmount,
+        expiringAt: newExpiringAt,
+      };
+
+      const newTransaction = new PlansTransaction(transactionData);
+      await newTransaction.save({ session });
+
+      // ✅ Mark referral success if plan >= 30 days
+      if (plan.period >= 30) {
+        const is_referred = await Referral.findOne({
+          user_id: req.user,
+          status: "active",
+        }).session(session);
+
+        if (is_referred) {
+          is_referred.status = "success";
+          await is_referred.save({ session });
+        }
+      }
+
+      // ✅ Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      return res.status(200).json({
+        message: "Subscription successful",
+        requiredAmount,
+        remainingBalance: user1.walletbalance,
       });
-     const address = await DeliveryAddress.findOne({_id:addressId})
-     
-      let remainingDays = 0; // Initialize remaining days
-      if (existingTransaction) {
-          // Calculate remaining days from the existing transaction
-          const timeDiff = existingTransaction.expiringAt - currentDate; // Time difference in milliseconds
-          remainingDays = Math.ceil(timeDiff / (24 * 60 * 60 * 1000)); // Convert to days
-          console.log('remaining days ',remainingDays)
-          // Update the existing transaction to expire the previous day
-          existingTransaction.expiringAt = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); // Set to previous day
-          await existingTransaction.save();
-      }
+    } else {
+      await session.abortTransaction();
+      session.endSession();
 
-      const plan = await Plans.findById(planId);
-      const coupon = couponName ? await Coupon.findOne({ name: couponName }) : null; // Fetch coupon only if provided
-      const user1 = await User.findById(req.user);
-
-      // Calculate the price after discount and coupon
-      const priceWithDiscount = plan.price - (plan.price * plan.discount) / 100;
-      const priceWithCoupon = coupon ? priceWithDiscount - (priceWithDiscount * coupon.discount) / 100 : priceWithDiscount;
-
-      const requiredAmount = priceWithCoupon;
-
-      if (requiredAmount <= user1.walletbalance) {
-          // Decrease user wallet balance by required amount
-          user1.walletbalance -= requiredAmount;
-          await user1.save();
-
-          // Calculate the new expiring date (30 days + remaining days)
-          const newExpiringAt = new Date(currentDate.getTime() + (plan.period + remainingDays) * 24 * 60 * 60 * 1000);
-          console.log('new expiring at ',newExpiringAt)
-          // Add new transaction to transactions collection
-          
-          const transactionData = {
-              user_id: user1._id,
-              plan_id: plan._id,
-              address_id:addressId,
-              coupon_id: coupon ? coupon._id : null, // Store coupon ID if applied
-              amount: requiredAmount,
-              expiringAt: newExpiringAt, // Set new expiring date
-          };
-
-          const newTransaction = new PlansTransaction(transactionData);
-          await newTransaction.save();
-
-          // Return a success response
-          return res.status(200).json({
-              message: 'Subscription successful',
-              requiredAmount,
-              remainingBalance: user1.walletbalance,
-          });
-      } else {
-          // Return an error response if insufficient balance
-          return res.status(400).json({
-              message: 'Insufficient wallet balance',
-              requiredAmount,
-              walletBalance: user1.walletbalance,
-          });
-      }
+      return res.status(400).json({
+        message: "Insufficient wallet balance",
+        requiredAmount,
+        walletBalance: user1.walletbalance,
+      });
+    }
   } catch (error) {
-      console.error('Error during subscription:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+    console.error("Error during subscription:", error);
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 

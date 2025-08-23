@@ -2,7 +2,7 @@
 const User = require('../Models/User')
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
-// var cryptojs = require('crypto-js')
+const  crypto = require('crypto')
 // const { default: mongoose, MongooseError } = require('mongoose')
 // const sendEmail = require('../functions/SendEmail')
 const bcrypt = require('bcryptjs')
@@ -10,6 +10,7 @@ const PaymentOrder = require('../Models/PaymentOrder');
 const PlansTransaction = require('../Models/PlansTransaction');
 const DeliveryAddress = require('../Models/DeliveryAddress');
 const OTP = require('../Models/Otp');
+const Referral = require('../Models/Referral');
 
 const verifyLogin = async (req,res)=>{
 
@@ -73,33 +74,84 @@ const login = async (req, res) => {
     }
   };
 
-const createUser =async (req,res) =>{
-    try {
-        const { firstName, lastName, email, phone, password } = req.body;
-    
-        const existingUser = await User.findOne({ phone });
-        if (existingUser) {
-          return res.status(400).json({ msg: 'User already exists with this phone' });
-        }
-    
-        const hashedPassword = await bcrypt.hash(password, 10);
-    
-        const user = new User({
-          firstName,
-          lastName,
-          email,
-          phone,
-          password: hashedPassword,
-          
+const createUser = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { firstName, lastName, email, phone, password, referral_code_ } = req.body;
+    console.log("data received in create user is ", { firstName, lastName, email, phone, password, referral_code_ });
+
+    // Check if phone exists
+    const existingUser_p = await User.findOne({ phone }).session(session);
+    if (existingUser_p) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(409).json({ msg: "User already exists with this phone" });
+    }
+
+    // Check if email exists
+    const existingUser_e = await User.findOne({ email }).session(session);
+    if (existingUser_e) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(409).json({ msg: "User already exists with this email" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const user = new User({
+      firstName,
+      lastName,
+      email,
+      phone,
+      password: hashedPassword,
+    });
+
+    await user.save({ session });
+    const new_user_id = user._id;
+const uniqueString = new_user_id.toString() + Date.now().toString() + Math.random().toString();
+
+    // Convert to base36 and take first 5 chars
+    const referralCode = crypto.createHash("sha256")     // hash with SHA-256
+    .update(new_user_id.toString()) // feed userId string
+    .digest("hex")             // hex string
+    .substring(0, 5)           // first 5 chars
+    .toUpperCase(); 
+    // Handle referral if provided
+    if (referral_code_) {
+      const referrer = await Referral.findOne({ referralCode: referral_code_ }).session(session);
+      console.log("Referrer found: ", referrer);
+      if (referrer) {
+        const referralEntry = new Referral({
+          user_id: new_user_id,
+          referralCode: referralCode,
+          referredBy: referrer.user_id,
+          status: "active",
         });
-    
-        await user.save();
-        res.status(200).json({ msg: 'User created successfully' });
-      } catch (error) {
-        console.error('Error creating user:', error);
-        res.status(500).json({ msg: 'Server error' });
+        await referralEntry.save({ session });
+        console.log("Referral entry created: ", referralEntry);
+      } else {
+        console.log("Invalid referral code provided");
       }
-}
+    }
+
+    // ✅ Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ msg: "User created successfully" });
+  } catch (error) {
+    console.error("Error creating user:", error);
+
+    // ❌ Rollback transaction
+    await session.abortTransaction();
+    session.endSession();
+
+    res.status(500).json({ msg: "Server error" });
+  }
+};
 
 const forgotPassword = async (req, res) => {
   try {
