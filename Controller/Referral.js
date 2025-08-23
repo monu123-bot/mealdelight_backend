@@ -28,6 +28,8 @@ const getReferrals = async (req, res) => {
           referralId: "$_id",
           status: 1,
           createdAt: 1,
+          redemmed:1,
+          redemmed_amount:1,
           "referee.id": "$refereeDetails._id",
           "referee.firstName": "$refereeDetails.firstName",
           "referee.lastName": "$refereeDetails.lastName",
@@ -116,7 +118,76 @@ const generateReferralCode = async (req, res) => {
   }
 };
 
+const redeemReferral = async (req, res) => {
+  try {
+    const user_id = req.user; // current logged in user (referrer)
+    const referralId = req.body.referralId; // referral document ID to redeem
+
+    console.log("user id in redeem referral is ", user_id);
+    console.log("referral id to redeem is ", referralId);
+
+    // Find the referral document
+    const referral = await Referral.findOne({ _id: referralId, referredBy: user_id });
+    
+    if (!referral) {
+      return res.status(404).json({
+        success: false,
+        message: "Referral not found or you are not authorized to redeem this referral.",
+      });
+    }
+
+    if (referral.status !== "success") {
+      return res.status(400).json({
+        success: false,
+        message: "Referral is not in a redeemable state.",
+      });
+    }
+
+    if (referral.redemmed) {
+      return res.status(400).json({
+        success: false,
+        message: "Referral has already been redeemed.",
+      });
+    }
+
+    // Mark as redeemed
+    referral.redemmed = true;
+    await referral.save();
+
+    // Update referrer's wallet
+    const referer = await User.findOne({ _id: user_id });
+    referer.walletbalance += referral.redemmed_amount;
+    await referer.save();
+
+    // ✅ Add a transaction record
+    const transaction = new Transaction({
+      userId: user_id,
+      type: "credit", // money coming in
+      amount: referral.redemmed_amount,
+      source: "referral", // so you know it came from referral
+      referralId: referral._id, // link back to the referral
+      status: "completed",
+      createdAt: new Date(),
+    });
+    await transaction.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully redeemed ${referral.redemmed_amount} points from the referral.`,
+      redemmed_amount: referral.redemmed_amount,
+      transactionId: transaction._id
+    });
+
+  } catch (error) {
+    console.error("Error in redeemReferral:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later.",
+      error: error.message,
+    });
+  }
+};
 
 
 
-module.exports = {getReferrals,generateReferralCode}
+module.exports = {getReferrals,generateReferralCode,redeemReferral}

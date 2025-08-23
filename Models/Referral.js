@@ -22,6 +22,14 @@ const referralSchema = new mongoose.Schema({
         type: String,
         enum: ['active', 'success', 'failed',null],
         default: null
+    },
+    redemmed: {
+        type: Boolean,
+        default: false
+    },
+    redemmed_amount: {
+        type: Number,   
+        default: 200
     }
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
