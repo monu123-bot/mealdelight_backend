@@ -34,7 +34,11 @@ const planSchema = new mongoose.Schema({
     isHome:{
         type:Boolean,
         default:false
-    }
+    },
+    includes:{
+        type:[Boolean,Boolean,Boolean], // breakfast,lunch,dinner
+        required:true
+    },
 }, {
     timestamps: true // Automatically adds createdAt and updatedAt fields
 });

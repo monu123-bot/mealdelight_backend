@@ -273,7 +273,8 @@ const EditPlan = async (req,res)=>{
       period,
       isCoupon,
       menu,
-      isHome
+      isHome,
+      includes
     } = req.body;
     
     // Create update object with validated data
@@ -288,6 +289,7 @@ const EditPlan = async (req,res)=>{
     if (isCoupon !== undefined) updateData.isCoupon = isCoupon;
     if (menu !== undefined) updateData.menu = menu;
     if (isHome !== undefined) updateData.isHome = isHome;
+    if (includes !== undefined) updateData.includes = includes;
     
     // Update the plan with new data
     const updatedPlan = await planSchema.findByIdAndUpdate(
@@ -1004,4 +1006,386 @@ console.log(admin)
       });
     }
   };
-module.exports = {AddMenu,Login,Register,GetMenu,addPlan,getPlans,EditPlan,DeletePlan,getWeeklyMenus,editWeeklyMenu,deleteWeeklyMenu,GetWalletTransactions,UpdateClaimStatus,getUsers,getTransactionOrders,getUserActivityHistory};
+
+
+ 
+
+// Function to get daily meal preparation report
+async function getDailyMealReport(targetDate = new Date()) {
+    try {
+        // Convert target date to start and end of day
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Get day name (monday, tuesday, etc.)
+        const dayName = targetDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        
+        // Format date as string for paused dates comparison (YYYY-MM-DD)
+        const dateString = targetDate.toISOString().split('T')[0];
+
+        const result = await mongoose.model('plansTransaction').aggregate([
+            {
+                // Match active transactions that haven't expired
+                $match: {
+                    expiringAt: { $gte: startOfDay },
+                    createdAt: { $lte: endOfDay }
+                }
+            },
+            {
+                // Lookup plan details
+                $lookup: {
+                    from: 'plans',
+                    localField: 'plan_id',
+                    foreignField: '_id',
+                    as: 'plan'
+                }
+            },
+            {
+                $unwind: '$plan'
+            },
+            {
+                // Lookup menu details
+                $lookup: {
+                    from: 'weeklymenus',
+                    localField: 'plan.menu',
+                    foreignField: '_id',
+                    as: 'menu'
+                }
+            },
+            {
+                $unwind: '$menu'
+            },
+            {
+                $addFields: {
+                    // Check if current date is in pausedDates array
+                    isPausedToday: {
+                        $in: [dateString, '$pausedDates']
+                    },
+                    // Get today's meals from menu
+                    todayMeals: `$menu.${dayName}`,
+                    // Get meal inclusions from plan
+                    includesBreakfast: { $arrayElemAt: ['$plan.includes', 0] },
+                    includesLunch: { $arrayElemAt: ['$plan.includes', 1] },
+                    includesDinner: { $arrayElemAt: ['$plan.includes', 2] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalActiveOrders: {
+                        $sum: {
+                            $cond: [{ $eq: ['$isPausedToday', false] }, 1, 0]
+                        }
+                    },
+                    totalPausedUsers: {
+                        $sum: {
+                            $cond: [{ $eq: ['$isPausedToday', true] }, 1, 0]
+                        }
+                    },
+                    // Breakfast calculations
+                    breakfastOrders: {
+                        $sum: {
+                            $cond: [
+                                { 
+                                    $and: [
+                                        { $eq: ['$isPausedToday', false] },
+                                        { $eq: ['$includesBreakfast', true] }
+                                    ]
+                                }, 
+                                1, 
+                                0
+                            ]
+                        }
+                    },
+                    breakfastMeals: {
+                        $push: {
+                            $cond: [
+                                { 
+                                    $and: [
+                                        { $eq: ['$isPausedToday', false] },
+                                        { $eq: ['$includesBreakfast', true] }
+                                    ]
+                                },
+                                '$todayMeals.breakfast',
+                                []
+                            ]
+                        }
+                    },
+                    // Lunch calculations
+                    lunchOrders: {
+                        $sum: {
+                            $cond: [
+                                { 
+                                    $and: [
+                                        { $eq: ['$isPausedToday', false] },
+                                        { $eq: ['$includesLunch', true] }
+                                    ]
+                                }, 
+                                1, 
+                                0
+                            ]
+                        }
+                    },
+                    lunchMeals: {
+                        $push: {
+                            $cond: [
+                                { 
+                                    $and: [
+                                        { $eq: ['$isPausedToday', false] },
+                                        { $eq: ['$includesLunch', true] }
+                                    ]
+                                },
+                                '$todayMeals.lunch',
+                                []
+                            ]
+                        }
+                    },
+                    // Dinner calculations
+                    dinnerOrders: {
+                        $sum: {
+                            $cond: [
+                                { 
+                                    $and: [
+                                        { $eq: ['$isPausedToday', false] },
+                                        { $eq: ['$includesDinner', true] }
+                                    ]
+                                }, 
+                                1, 
+                                0
+                            ]
+                        }
+                    },
+                    dinnerMeals: {
+                        $push: {
+                            $cond: [
+                                { 
+                                    $and: [
+                                        { $eq: ['$isPausedToday', false] },
+                                        { $eq: ['$includesDinner', true] }
+                                    ]
+                                },
+                                '$todayMeals.dinner',
+                                []
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    date: dateString,
+                    dayOfWeek: dayName,
+                    summary: {
+                        totalActiveOrders: '$totalActiveOrders',
+                        totalPausedUsers: '$totalPausedUsers'
+                    },
+                    breakfast: {
+                        totalOrders: '$breakfastOrders',
+                        meals: {
+                            $reduce: {
+                                input: '$breakfastMeals',
+                                initialValue: [],
+                                in: { $concatArrays: ['$$value', '$$this'] }
+                            }
+                        }
+                    },
+                    lunch: {
+                        totalOrders: '$lunchOrders',
+                        meals: {
+                            $reduce: {
+                                input: '$lunchMeals',
+                                initialValue: [],
+                                in: { $concatArrays: ['$$value', '$$this'] }
+                            }
+                        }
+                    },
+                    dinner: {
+                        totalOrders: '$dinnerOrders',
+                        meals: {
+                            $reduce: {
+                                input: '$dinnerMeals',
+                                initialValue: [],
+                                in: { $concatArrays: ['$$value', '$$this'] }
+                            }
+                        }
+                    }
+                }
+            }
+        ]);
+
+        // Post-process to count meal quantities
+        if (result.length > 0) {
+            const report = result[0];
+            
+            // Count meal quantities for each meal type
+            ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+                const mealCounts = {};
+                report[mealType].meals.forEach(meal => {
+                    if (meal && meal.name) {
+                        mealCounts[meal.name] = (mealCounts[meal.name] || 0) + 1;
+                    }
+                });
+                report[mealType].mealQuantities = mealCounts;
+                delete report[mealType].meals; // Remove raw meals array
+            });
+
+            return report;
+        } else {
+            return {
+                date: dateString,
+                dayOfWeek: dayName,
+                summary: {
+                    totalActiveOrders: 0,
+                    totalPausedUsers: 0
+                },
+                breakfast: { totalOrders: 0, mealQuantities: {} },
+                lunch: { totalOrders: 0, mealQuantities: {} },
+                dinner: { totalOrders: 0, mealQuantities: {} }
+            };
+        }
+
+    } catch (error) {
+        console.error('Error fetching daily meal report:', error);
+        throw error;
+    }
+}
+
+// Usage examples:
+
+// Get today's report
+async function getTodaysReport() {
+    const report = await getDailyMealReport();
+    console.log('Today\'s Meal Preparation Report:', JSON.stringify(report, null, 2));
+    return report;
+}
+
+// Get specific date report
+
+
+
+const getSpecificDateReport = async (req, res) => {
+  try {
+    const date = new Date(req.body.date); // Expecting date in YYYY-MM-DD format
+
+    if (isNaN(date)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format. Please use YYYY-MM-DD."
+      });
+    }
+
+    const specificDate = date; 
+    const report = await getDailyMealReport(specificDate);
+
+    console.log(
+      "Meal Preparation Report for",
+      specificDate.toDateString(),
+      ":",
+      JSON.stringify(report, null, 2)
+    );
+
+    res.status(200).json({
+      success: true,
+      report
+    });
+  } catch (error) {
+    console.error("Error in getSpecificDateReport:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong while fetching the report.",
+      error: error.message
+    });
+  }
+};
+
+
+// Alternative simpler query if you just want counts without meal details
+async function getSimpleDailyCounts(targetDate = new Date()) {
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const dateString = targetDate.toISOString().split('T')[0];
+
+    return await mongoose.model('plansTransaction').aggregate([
+        {
+            $match: {
+                expiringAt: { $gte: startOfDay },
+                createdAt: { $lte: endOfDay }
+            }
+        },
+        {
+            $lookup: {
+                from: 'plans',
+                localField: 'plan_id',
+                foreignField: '_id',
+                as: 'plan'
+            }
+        },
+        {
+            $unwind: '$plan'
+        },
+        {
+            $addFields: {
+                isPausedToday: { $in: [dateString, '$pausedDates'] },
+                includesBreakfast: { $arrayElemAt: ['$plan.includes', 0] },
+                includesLunch: { $arrayElemAt: ['$plan.includes', 1] },
+                includesDinner: { $arrayElemAt: ['$plan.includes', 2] }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                totalActiveOrders: { $sum: { $cond: [{ $eq: ['$isPausedToday', false] }, 1, 0] } },
+                totalPausedUsers: { $sum: { $cond: [{ $eq: ['$isPausedToday', true] }, 1, 0] } },
+                breakfastCount: { 
+                    $sum: { 
+                        $cond: [
+                            { $and: [{ $eq: ['$isPausedToday', false] }, { $eq: ['$includesBreakfast', true] }] }, 
+                            1, 0
+                        ] 
+                    } 
+                },
+                lunchCount: { 
+                    $sum: { 
+                        $cond: [
+                            { $and: [{ $eq: ['$isPausedToday', false] }, { $eq: ['$includesLunch', true] }] }, 
+                            1, 0
+                        ] 
+                    } 
+                },
+                dinnerCount: { 
+                    $sum: { 
+                        $cond: [
+                            { $and: [{ $eq: ['$isPausedToday', false] }, { $eq: ['$includesDinner', true] }] }, 
+                            1, 0
+                        ] 
+                    } 
+                }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                date: dateString,
+                totalActiveOrders: 1,
+                totalPausedUsers: 1,
+                breakfastOrdersCount: '$breakfastCount',
+                lunchOrdersCount: '$lunchCount',
+                dinnerOrdersCount: '$dinnerCount'
+            }
+        }
+    ]);
+}
+
+
+
+
+
+module.exports = {AddMenu,Login,Register,GetMenu,addPlan,getPlans,EditPlan,DeletePlan,getWeeklyMenus,editWeeklyMenu,deleteWeeklyMenu,GetWalletTransactions,UpdateClaimStatus,getUsers,getTransactionOrders,getUserActivityHistory,getSpecificDateReport};
