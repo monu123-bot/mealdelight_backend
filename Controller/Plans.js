@@ -10,6 +10,7 @@ const mongoose = require('mongoose');
 const DeliveryAddress = require('../Models/DeliveryAddress');
 const Menu = require('../Models/Menu');
 const Referral = require('../Models/Referral');
+const Packaging = require('../Models/Packaging');
 const getPlans = async (req, res) => {
   try {
       const page = parseInt(req.query.page) || 1; // Page number from query parameter, default to 1
@@ -38,7 +39,7 @@ const Subscribe = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { planId, couponName, addressId } = req.body;
+    const { planId, couponName, addressId,packagingId } = req.body;
     const currentDate = new Date();
 
     // ✅ Find existing transaction (with session)
@@ -46,6 +47,7 @@ const Subscribe = async (req, res) => {
       user_id: new mongoose.Types.ObjectId(req.user),
       plan_id: new mongoose.Types.ObjectId(planId),
       address_id: new mongoose.Types.ObjectId(addressId),
+      packing_id: new mongoose.Types.ObjectId(packagingId),
       expiringAt: { $gte: currentDate },
     }).session(session);
 
@@ -91,6 +93,7 @@ const Subscribe = async (req, res) => {
         user_id: user1._id,
         plan_id: plan._id,
         address_id: addressId,
+        packing_id: packagingId,
         coupon_id: coupon ? coupon._id : null,
         amount: requiredAmount,
         expiringAt: newExpiringAt,
@@ -298,13 +301,14 @@ const get5Plans = async (req, res) => {
   
       // Fetch plan details from the database
       const plan = await Plans.findById(planId);
+      const packagingOptions = await Packaging.find();
   
       if (!plan) {
         return res.status(404).json({ message: "Plan not found" });
       }
   
       // Respond with the plan details
-      res.status(200).json(plan);
+      res.status(200).json({plan:plan,packagingOptions:packagingOptions});
     } catch (error) {
       console.error("Error fetching plan details:", error);
       res.status(500).json({ message: "Internal server error" });

@@ -147,6 +147,7 @@ const AdminRouter = require('./Routes/Admin');
 const ThirdPartyRouter = require('./Routes/ThirdParty');
 const ReferralRouter = require('./Routes/Referral')
 const { default: mongoose } = require("mongoose");
+const Packaging = require("./Models/Packaging");
 
 app.use("/user", UserRouter);
 app.use("/payment",PaymentRouter)
@@ -160,6 +161,47 @@ app.use('/survey',SurveyRouter)
 app.use('/admin',AdminRouter)
 app.use('/tapi',ThirdPartyRouter)
 app.use('/referral',ReferralRouter)
+
+
+const addPackaging = async () => {
+  try {
+    const dummyData = [
+      {
+        name: "Eco-Friendly 5-Box Plate",
+        description: "Biodegradable and leak-proof 5 compartment plate for sustainable food delivery.",
+        image: "https://chuk.in/wp-content/uploads/2024/09/1-21.webp",
+        price: 15,
+        discount:20
+      },
+      {
+        name: "Plastic 5-Box Plate",
+        description: "Durable plastic 5 compartment plate for multiple uses and easy delivery.",
+        image: "https://5.imimg.com/data5/SELLER/Default/2023/7/329951291/NW/VZ/CY/193855300/5-compartment-meal-disposable-food-lid-tray-1000x1000.jpg",
+        price: 15,
+        discount: 10
+      },
+      {
+        name: "Steel Lunch Box",
+        description: "Steel Lunch box with multiple compartments for a healthy meal on the go.",
+        image: "https://m.media-amazon.com/images/I/71Z-sogpKGL._SL1500_.jpg",
+        price: 15,
+        discount: 10
+      }
+    ];
+
+    // Insert into DB
+    await Packaging.insertMany(dummyData);
+    console.log("✅ Dummy packaging data inserted successfully!");
+  } catch (err) {
+    console.error("❌ Error inserting packaging data:", err);
+  } finally {
+    mongoose.connection.close();
+  }
+};
+
+// Run the function
+// addPackaging();
+
 
 app.listen(PORT, () => {
   console.log('Server is running on port:', PORT);
